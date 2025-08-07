@@ -1,0 +1,14 @@
+/* client/src/components/LoginPage.css */
+.login-container {
+    background: #f4f4f4;
+    padding: 2rem;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    max-width: 500px;
+    margin: 2rem auto;
+    text-align: center;
+}
+
+.login-container h2 {
+    margin-bottom: 1rem;
+}
