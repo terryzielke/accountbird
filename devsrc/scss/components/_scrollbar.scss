@@ -1,0 +1,33 @@
+html,
+body{
+	/* Forces scrollbar */
+	//overflow-y: scroll;
+	/* Style the scrollbar itself */
+	::-webkit-scrollbar {
+		width: 4px;
+		height: 0;
+	}
+
+	/* Style the draggable thumb */
+	::-webkit-scrollbar-thumb {
+		background-color: $dark;
+		border-radius: 10px;
+		border: none;
+	}
+
+	/* Hover state for the thumb */
+	::-webkit-scrollbar-thumb:hover {
+		background-color: $secondary;
+	}
+
+	/* Style the scrollbar track */
+	::-webkit-scrollbar-track {
+		background-color: $black;
+		border-radius: 10px;
+	}
+
+	/* Style the scrollbar button (optional) */
+	::-webkit-scrollbar-button {
+		display: none;
+	}
+}

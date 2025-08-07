@@ -1,0 +1,33 @@
+
+// colors
+$purple: #9946FF;
+$yellow: #FFD644;
+$blue: #3A8DFF;
+$red: #FF4D6D;
+$black: #000000;
+$white: #FFFFFF; 
+$dark: #101015;
+$medium: #464649;
+$light: #EEEEEF;
+
+$primary: $purple;
+$secondary: $yellow;
+$error: $red;
+
+// breakpoints
+$xs: 200px;
+$sm: 576px;
+$md: 768px;
+$lg: 992px;
+$xl: 1440px;
+$xxl: 1920px;
+
+$max-width: $lg;
+$padding: 20px;
+
+// fonts
+$fontawesome:	'Font Awesome 5 Free' !important;
+$icon:			$fontawesome;
+$header:		'Gabarito', sans-serif;
+$text:			'Source Sans 3', 'Open Sans', sans-serif;
+$font-size:		clamp(16px, .9vw, 20px);
