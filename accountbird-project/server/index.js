@@ -9,11 +9,8 @@ dotenv.config();
 
 const app = express();
 
-// --- CRITICAL STEP ---
-// The cors middleware MUST be placed here, BEFORE any routes are defined.
+// The cors and express middleware MUST be placed here, BEFORE any routes are defined.
 app.use(cors());
-
-// The express.json() middleware must also be here
 app.use(express.json());
 
 // Database Connection
@@ -30,8 +27,8 @@ const connectDB = async () => {
 connectDB();
 
 // API Routes
-// Your routes should be defined after the middleware
 app.use('/api/init', require('./routes/init'));
+app.use('/api/auth', require('./routes/auth'));
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
