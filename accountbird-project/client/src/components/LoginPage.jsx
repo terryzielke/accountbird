@@ -30,23 +30,19 @@ const LoginPage = () => {
             };
             const body = JSON.stringify({ email, password });
             
-            // Post the login data to our backend route
             const response = await axios.post('http://localhost:5001/api/auth/login', body, config);
             
-            // On success, store the token and user data
+            // On success, store the token AND user data (for a better user experience)
             localStorage.setItem('token', response.data.token);
-            // In a real app, you'd handle state and routing here
-            setMessage(`Welcome, ${response.data.user.userName}! You are logged in.`);
+            localStorage.setItem('user', JSON.stringify(response.data.user));
             
-            // Redirect the user to the front page
-            // We'll implement this with React Router later
-            // For now, let's just refresh the page to show the login state
+            setMessage(`Welcome, ${response.data.user.firstName || response.data.user.email}! You are logged in.`);
+            
             setTimeout(() => {
                 window.location.reload();
             }, 2000);
             
         } catch (err) {
-            // Display error message from the backend
             setError(err.response?.data?.msg || 'An unexpected error occurred.');
             console.error(err);
         }

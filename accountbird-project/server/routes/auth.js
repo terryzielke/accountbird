@@ -4,12 +4,13 @@ const router = express.Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
-// Import the Admin model (we'll need this to find the user)
+// Import both the Admin and User models
 const Admin = require('../models/Admin');
+const User = require('../models/User');
 
 /**
  * @route   POST /api/auth/login
- * @desc    Authenticate admin and get token
+ * @desc    Authenticate admin or user and get token
  * @access  Public
  */
 router.post('/login', async (req, res) => {
@@ -21,41 +22,62 @@ router.post('/login', async (req, res) => {
     }
 
     try {
-        // 2. Check for existing admin
+        let user = null;
+        let role = null;
+
+        // 2. Check for admin user first
         const admin = await Admin.findOne({ email });
-        if (!admin) {
+        if (admin) {
+            user = admin;
+            role = 'admin';
+        } else {
+            // 3. If not an admin, check for a regular user
+            const regularUser = await User.findOne({ email });
+            if (regularUser) {
+                user = regularUser;
+                role = regularUser.role;
+            }
+        }
+
+        // 4. If no user is found in either collection, return an error
+        if (!user) {
             return res.status(400).json({ msg: 'Invalid credentials.' });
         }
 
-        // 3. Validate password
-        const isMatch = await bcrypt.compare(password, admin.password);
+        // 5. Validate password
+        const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) {
             return res.status(400).json({ msg: 'Invalid credentials.' });
         }
 
-        // 4. Create and sign JWT
+        // 6. Create and sign JWT with a unified payload structure
         const payload = {
-            admin: {
-                id: admin.id,
-                // We'll add roles later for access control
-                // role: 'admin',
+            user: {
+                id: user.id,
+                role: role,
             },
         };
+        // If the user has an accountId, add it to the payload
+        if (user.accountId) {
+            payload.user.accountId = user.accountId;
+        }
 
         // Sign the token with your secret from the .env file
         jwt.sign(
             payload,
             process.env.JWT_SECRET,
-            { expiresIn: '1h' }, // Token expires in 1 hour
+            { expiresIn: '1h' },
             (err, token) => {
                 if (err) throw err;
-                // Return the token and user data
                 res.json({
                     token,
                     user: {
-                        id: admin.id,
-                        userName: admin.userName,
-                        email: admin.email,
+                        id: user.id,
+                        email: user.email,
+                        role: role,
+                        // If it's a regular user, include their name
+                        firstName: user.firstName,
+                        lastName: user.lastName,
                     },
                 });
             }

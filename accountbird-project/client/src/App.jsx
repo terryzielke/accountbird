@@ -3,14 +3,15 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import InitializationForm from './components/InitializationForm';
 import LoginPage from './components/LoginPage';
+import RegistrationForm from './components/RegistrationForm';
+import Dashboard from './components/Dashboard';
 import './App.css';
 
 function App() {
-    // State to track if the system has been initialized
     const [isInitialized, setIsInitialized] = useState(null);
     const [loading, setLoading] = useState(true);
-    // State to track login status
     const [user, setUser] = useState(null);
+    const [showRegistration, setShowRegistration] = useState(false);
 
     useEffect(() => {
         const checkInitializationStatus = async () => {
@@ -25,13 +26,13 @@ function App() {
             }
         };
 
-        // Check for a token in local storage on initial load
         const token = localStorage.getItem('token');
-        if (token) {
-            // In a real app, you'd verify the token with the server
-            // For now, we'll just assume a token means the user is logged in
-            setUser({ userName: 'Admin User' }); // Placeholder for now
-            setIsInitialized(true); // If a token exists, the app must be initialized
+        const storedUser = localStorage.getItem('user');
+
+        if (token && storedUser) {
+            // Parse the user data from local storage and set the state
+            setUser(JSON.parse(storedUser));
+            setIsInitialized(true);
             setLoading(false);
         } else {
             checkInitializationStatus();
@@ -44,6 +45,7 @@ function App() {
 
     const handleLogout = () => {
         localStorage.removeItem('token');
+        localStorage.removeItem('user');
         setUser(null);
         window.location.reload();
     };
@@ -52,7 +54,6 @@ function App() {
         return <div className="loading-container">Loading...</div>;
     }
     
-    // Render logic
     if (isInitialized) {
         if (user) {
             return (
@@ -61,8 +62,7 @@ function App() {
                         <h1>AccountBird</h1>
                     </header>
                     <main>
-                        <h2>Welcome {user.userName}!</h2>
-                        <button onClick={handleLogout}>Log Out</button>
+                        <Dashboard user={user} onLogout={handleLogout} />
                     </main>
                 </div>
             );
@@ -73,7 +73,19 @@ function App() {
                         <h1>AccountBird</h1>
                     </header>
                     <main>
-                        <LoginPage />
+                        {showRegistration ? (
+                            <RegistrationForm />
+                        ) : (
+                            <>
+                                <LoginPage />
+                                <div style={{ textAlign: 'center', marginTop: '1rem' }}>
+                                    <p>Don't have an account?</p>
+                                    <button className="secondary-btn" onClick={() => setShowRegistration(true)}>
+                                        Register Here
+                                    </button>
+                                </div>
+                            </>
+                        )}
                     </main>
                 </div>
             );
