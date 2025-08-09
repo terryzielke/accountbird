@@ -4,7 +4,7 @@ import './Dashboard.css';
 
 const Dashboard = ({ user, onLogout }) => {
     // Determine the user's name for the welcome message
-    const displayName = user.firstName || user.email;
+    const displayName = user.firstName || user.userName || user.email;
 
     return (
         <div className="dashboard-container">

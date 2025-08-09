@@ -32,11 +32,13 @@ const LoginPage = () => {
             
             const response = await axios.post('http://localhost:5001/api/auth/login', body, config);
             
-            // On success, store the token AND user data (for a better user experience)
+            // Store the token and the complete user object, including the role
             localStorage.setItem('token', response.data.token);
             localStorage.setItem('user', JSON.stringify(response.data.user));
             
-            setMessage(`Welcome, ${response.data.user.firstName || response.data.user.email}! You are logged in.`);
+            // Get the user's name for the welcome message, handling different user types
+            const displayName = response.data.user.firstName || response.data.user.userName || response.data.user.email;
+            setMessage(`Welcome, ${displayName}! You are logged in.`);
             
             setTimeout(() => {
                 window.location.reload();

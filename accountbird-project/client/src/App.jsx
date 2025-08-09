@@ -30,7 +30,6 @@ function App() {
         const storedUser = localStorage.getItem('user');
 
         if (token && storedUser) {
-            // Parse the user data from local storage and set the state
             setUser(JSON.parse(storedUser));
             setIsInitialized(true);
             setLoading(false);
@@ -62,6 +61,7 @@ function App() {
                         <h1>AccountBird</h1>
                     </header>
                     <main>
+                        {/* Pass the user object to the Dashboard component */}
                         <Dashboard user={user} onLogout={handleLogout} />
                     </main>
                 </div>

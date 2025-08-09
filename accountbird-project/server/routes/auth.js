@@ -24,6 +24,7 @@ router.post('/login', async (req, res) => {
     try {
         let user = null;
         let role = null;
+        let isRegularUser = false; // Add a flag to distinguish user types
 
         // 2. Check for admin user first
         const admin = await Admin.findOne({ email });
@@ -36,10 +37,11 @@ router.post('/login', async (req, res) => {
             if (regularUser) {
                 user = regularUser;
                 role = regularUser.role;
+                isRegularUser = true;
             }
         }
 
-        // 4. If no user is found in either collection, return an error
+        // 4. If no user is found, return an error
         if (!user) {
             return res.status(400).json({ msg: 'Invalid credentials.' });
         }
@@ -57,9 +59,9 @@ router.post('/login', async (req, res) => {
                 role: role,
             },
         };
-        // If the user has an accountId, add it to the payload
-        if (user.accountId) {
-            payload.user.accountId = user.accountId;
+        // Add accountId to payload only if it's a regular user
+        if (isRegularUser) {
+             payload.user.accountId = user.accountId;
         }
 
         // Sign the token with your secret from the .env file
@@ -69,16 +71,25 @@ router.post('/login', async (req, res) => {
             { expiresIn: '1h' },
             (err, token) => {
                 if (err) throw err;
-                res.json({
-                    token,
-                    user: {
-                        id: user.id,
-                        email: user.email,
-                        role: role,
-                        // If it's a regular user, include their name
+
+                // Send a unified user object back to the client
+                const userResponse = {
+                    id: user.id,
+                    email: user.email,
+                    role: role,
+                    // Conditional properties based on user type
+                    ...(isRegularUser ? {
                         firstName: user.firstName,
                         lastName: user.lastName,
-                    },
+                        accountId: user.accountId
+                    } : {
+                        userName: user.userName // For the admin user
+                    })
+                };
+                
+                res.json({
+                    token,
+                    user: userResponse,
                 });
             }
         );
