@@ -5,6 +5,7 @@ import InitializationForm from './components/InitializationForm';
 import LoginPage from './components/LoginPage';
 import RegistrationForm from './components/RegistrationForm';
 import Dashboard from './components/Dashboard';
+import UserProfile from './components/UserProfile';
 import './App.css';
 
 function App() {
@@ -12,6 +13,7 @@ function App() {
     const [loading, setLoading] = useState(true);
     const [user, setUser] = useState(null);
     const [showRegistration, setShowRegistration] = useState(false);
+    const [view, setView] = useState('dashboard');
 
     useEffect(() => {
         const checkInitializationStatus = async () => {
@@ -61,8 +63,22 @@ function App() {
                         <h1>AccountBird</h1>
                     </header>
                     <main>
-                        {/* Pass the user object to the Dashboard component */}
-                        <Dashboard user={user} onLogout={handleLogout} />
+                        {view === 'dashboard' && (
+                            <>
+                                <Dashboard user={user} onLogout={handleLogout} />
+                                <button className="secondary-btn" onClick={() => setView('profile')}>
+                                    View Profile
+                                </button>
+                            </>
+                        )}
+                        {view === 'profile' && (
+                            <>
+                                <UserProfile user={user} onLogout={handleLogout} />
+                                <button className="secondary-btn" onClick={() => setView('dashboard')}>
+                                    Back to Dashboard
+                                </button>
+                            </>
+                        )}
                     </main>
                 </div>
             );
