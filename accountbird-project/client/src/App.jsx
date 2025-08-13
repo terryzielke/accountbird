@@ -5,6 +5,7 @@ import InitializationForm from './components/InitializationForm';
 import LoginPage from './components/LoginPage';
 import RegistrationForm from './components/RegistrationForm';
 import Dashboard from './components/Dashboard';
+import AdminDashboard from './components/AdminDashboard';
 import UserProfile from './components/UserProfile';
 import './App.css';
 
@@ -57,31 +58,45 @@ function App() {
     
     if (isInitialized) {
         if (user) {
-            return (
-                <div className="App">
-                    <header className="App-header">
-                        <h1>AccountBird</h1>
-                    </header>
-                    <main>
-                        {view === 'dashboard' && (
-                            <>
-                                <Dashboard user={user} onLogout={handleLogout} />
-                                <button className="secondary-btn" onClick={() => setView('profile')}>
-                                    View Profile
-                                </button>
-                            </>
-                        )}
-                        {view === 'profile' && (
-                            <>
-                                <UserProfile user={user} onLogout={handleLogout} />
-                                <button className="secondary-btn" onClick={() => setView('dashboard')}>
-                                    Back to Dashboard
-                                </button>
-                            </>
-                        )}
-                    </main>
-                </div>
-            );
+            // Check if the user is an admin and render the appropriate dashboard
+            if (user.role === 'admin') {
+                return (
+                    <div className="App">
+                        <header className="App-header">
+                            <h1>AccountBird</h1>
+                        </header>
+                        <main>
+                            <AdminDashboard onLogout={handleLogout} />
+                        </main>
+                    </div>
+                );
+            } else {
+                return (
+                    <div className="App">
+                        <header className="App-header">
+                            <h1>AccountBird</h1>
+                        </header>
+                        <main>
+                            {view === 'dashboard' && (
+                                <>
+                                    <Dashboard user={user} onLogout={handleLogout} />
+                                    <button className="secondary-btn" onClick={() => setView('profile')}>
+                                        View Profile
+                                    </button>
+                                </>
+                            )}
+                            {view === 'profile' && (
+                                <>
+                                    <UserProfile user={user} onLogout={handleLogout} />
+                                    <button className="secondary-btn" onClick={() => setView('dashboard')}>
+                                        Back to Dashboard
+                                    </button>
+                                </>
+                            )}
+                        </main>
+                    </div>
+                );
+            }
         } else {
             return (
                 <div className="App">
