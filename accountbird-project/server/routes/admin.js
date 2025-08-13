@@ -90,4 +90,86 @@ router.delete('/accounts/:accountId', auth(['admin']), async (req, res) => {
     }
 });
 
+/**
+ * @route   GET /api/admin/user/:userId
+ * @desc    Get a single user's details by ID
+ * @access  Private (Admin only)
+ */
+router.get('/user/:userId', auth(['admin']), async (req, res) => {
+    try {
+        const user = await User.findById(req.params.userId).select('-password');
+        if (!user) {
+            return res.status(404).json({ msg: 'User not found' });
+        }
+        res.json(user);
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server Error');
+    }
+});
+
+/**
+ * @route   PUT /api/admin/user/:userId
+ * @desc    Update a user's details (name, email, role)
+ * @access  Private (Admin only)
+ */
+router.put('/user/:userId', auth(['admin']), async (req, res) => {
+    const { firstName, lastName, email, role } = req.body;
+    const userFields = {};
+    if (firstName) userFields.firstName = firstName;
+    if (lastName) userFields.lastName = lastName;
+    if (email) userFields.email = email;
+    if (role) userFields.role = role;
+
+    try {
+        let user = await User.findById(req.params.userId);
+
+        if (!user) {
+            return res.status(404).json({ msg: 'User not found' });
+        }
+
+        // Check if a user with the new email already exists
+        if (email && email !== user.email) {
+            const existingUser = await User.findOne({ email });
+            if (existingUser) {
+                return res.status(400).json({ msg: 'Email already in use.' });
+            }
+        }
+
+        // Update the user
+        user = await User.findByIdAndUpdate(
+            req.params.userId,
+            { $set: userFields },
+            { new: true }
+        ).select('-password');
+
+        res.json(user);
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server Error');
+    }
+});
+
+/**
+ * @route   DELETE /api/admin/user/:userId
+ * @desc    Delete a user by ID
+ * @access  Private (Admin only)
+ */
+router.delete('/user/:userId', auth(['admin']), async (req, res) => {
+    try {
+        const user = await User.findById(req.params.userId);
+
+        if (!user) {
+            return res.status(404).json({ msg: 'User not found' });
+        }
+
+        await user.deleteOne();
+
+        res.json({ msg: 'User deleted successfully' });
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server Error');
+    }
+});
+
 module.exports = router;

@@ -1,5 +1,5 @@
 // client/src/components/AdminDashboard.jsx
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import axios from 'axios';
 import './AdminDashboard.css';
 
@@ -10,11 +10,12 @@ const AdminDashboard = ({ onLogout }) => {
     const [error, setError] = useState('');
 
     const token = localStorage.getItem('token');
-    const config = {
+    // Use useMemo to memoize the config object
+    const config = useMemo(() => ({
         headers: {
             'x-auth-token': token,
         },
-    };
+    }), [token]); // The config object only changes when the token changes
 
     const fetchAdminData = useCallback(async () => {
         setLoading(true);
@@ -28,27 +29,27 @@ const AdminDashboard = ({ onLogout }) => {
         } catch (err) {
             console.error('Error fetching admin data:', err);
             setError(err.response?.data?.msg || 'Failed to fetch admin data.');
-            if (err.response?.status === 403) {
+            if (err.response?.status === 401 || err.response?.status === 403) {
                 onLogout();
             }
         } finally {
             setLoading(false);
         }
-    }, [token, onLogout]);
+    }, [onLogout, config]);
 
     useEffect(() => {
-        if (token) {
-            fetchAdminData();
-        } else {
+        if (!token) {
             onLogout();
+            return;
         }
-    }, [token, fetchAdminData, onLogout]);
+
+        fetchAdminData();
+    }, [token, onLogout, fetchAdminData]);
 
     const handleUpdateAccount = async (accountId, newAccountType) => {
         try {
             const body = { accountType: newAccountType };
             await axios.put(`http://localhost:5001/api/admin/accounts/${accountId}`, body, config);
-            // Refresh the data after a successful update
             fetchAdminData();
         } catch (err) {
             setError(err.response?.data?.msg || 'An error occurred while updating the account.');
@@ -59,10 +60,30 @@ const AdminDashboard = ({ onLogout }) => {
         if (window.confirm('Are you sure you want to delete this account and all its users?')) {
             try {
                 await axios.delete(`http://localhost:5001/api/admin/accounts/${accountId}`, config);
-                // Refresh the data after a successful delete
                 fetchAdminData();
             } catch (err) {
                 setError(err.response?.data?.msg || 'An error occurred while deleting the account.');
+            }
+        }
+    };
+
+    const handleUpdateUserRole = async (userId, newRole) => {
+        try {
+            const body = { role: newRole };
+            await axios.put(`http://localhost:5001/api/admin/user/${userId}`, body, config);
+            fetchAdminData();
+        } catch (err) {
+            setError(err.response?.data?.msg || 'An error occurred while updating the user role.');
+        }
+    };
+
+    const handleDeleteUser = async (userId) => {
+        if (window.confirm('Are you sure you want to delete this user?')) {
+            try {
+                await axios.delete(`http://localhost:5001/api/admin/user/${userId}`, config);
+                fetchAdminData();
+            } catch (err) {
+                setError(err.response?.data?.msg || 'An error occurred while deleting the user.');
             }
         }
     };
@@ -86,7 +107,13 @@ const AdminDashboard = ({ onLogout }) => {
                     {users.length > 0 ? (
                         users.map(user => (
                             <li key={user._id}>
-                                {user.firstName} {user.lastName} ({user.email}) - Role: {user.role}
+                                <strong>Name:</strong> {user.firstName} {user.lastName}<br />
+                                <strong>Email:</strong> {user.email}<br />
+                                <strong>Role:</strong> {user.role}<br />
+                                <button onClick={() => handleUpdateUserRole(user._id, user.role === 'subscriber' ? 'contributor' : 'subscriber')}>
+                                    Toggle to {user.role === 'subscriber' ? 'Contributor' : 'Subscriber'}
+                                </button>
+                                <button onClick={() => handleDeleteUser(user._id)}>Delete</button>
                             </li>
                         ))
                     ) : (
