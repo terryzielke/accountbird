@@ -38,6 +38,26 @@ router.get('/accounts', auth(['admin']), async (req, res) => {
 });
 
 /**
+ * @route   GET /api/admin/accounts/:accountId
+ * @desc    Get a single account's details by ID
+ * @access  Private (Admin only)
+ */
+router.get('/accounts/:accountId', auth(['admin']), async (req, res) => {
+    try {
+        const account = await Account.findById(req.params.accountId).populate('primaryUser', 'firstName lastName email');
+
+        if (!account) {
+            return res.status(404).json({ msg: 'Account not found' });
+        }
+
+        res.json(account);
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server Error');
+    }
+});
+
+/**
  * @route   PUT /api/admin/accounts/:accountId
  * @desc    Update an account's details
  * @access  Private (Admin only)
@@ -166,6 +186,21 @@ router.delete('/user/:userId', auth(['admin']), async (req, res) => {
         await user.deleteOne();
 
         res.json({ msg: 'User deleted successfully' });
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server Error');
+    }
+});
+
+/**
+ * @route   GET /api/admin/accounts/:accountId/users
+ * @desc    Get all users for a specific account
+ * @access  Private (Admin only)
+ */
+router.get('/accounts/:accountId/users', auth(['admin']), async (req, res) => {
+    try {
+        const users = await User.find({ accountId: req.params.accountId }).select('-password');
+        res.json(users);
     } catch (err) {
         console.error(err.message);
         res.status(500).send('Server Error');

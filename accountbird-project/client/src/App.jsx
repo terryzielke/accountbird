@@ -1,20 +1,20 @@
 // client/src/App.jsx
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+
 import InitializationForm from './components/InitializationForm';
 import LoginPage from './components/LoginPage';
 import RegistrationForm from './components/RegistrationForm';
-import Dashboard from './components/Dashboard';
-import AdminDashboard from './components/AdminDashboard';
-import UserProfile from './components/UserProfile';
+import AdminLayout from './components/AdminLayout';
+import UserLayout from './components/UserLayout';
+
 import './App.css';
 
 function App() {
     const [isInitialized, setIsInitialized] = useState(null);
     const [loading, setLoading] = useState(true);
     const [user, setUser] = useState(null);
-    const [showRegistration, setShowRegistration] = useState(false);
-    const [view, setView] = useState('dashboard');
 
     useEffect(() => {
         const checkInitializationStatus = async () => {
@@ -41,10 +41,6 @@ function App() {
         }
     }, []);
 
-    const handleInitializationSuccess = () => {
-        setIsInitialized(true);
-    };
-
     const handleLogout = () => {
         localStorage.removeItem('token');
         localStorage.removeItem('user');
@@ -55,84 +51,28 @@ function App() {
     if (loading) {
         return <div className="loading-container">Loading...</div>;
     }
-    
-    if (isInitialized) {
-        if (user) {
-            // Check if the user is an admin and render the appropriate dashboard
-            if (user.role === 'admin') {
-                return (
-                    <div className="App">
-                        <header className="App-header">
-                            <h1>AccountBird</h1>
-                        </header>
-                        <main>
-                            <AdminDashboard onLogout={handleLogout} />
-                        </main>
-                    </div>
-                );
-            } else {
-                return (
-                    <div className="App">
-                        <header className="App-header">
-                            <h1>AccountBird</h1>
-                        </header>
-                        <main>
-                            {view === 'dashboard' && (
-                                <>
-                                    <Dashboard user={user} onLogout={handleLogout} />
-                                    <button className="secondary-btn" onClick={() => setView('profile')}>
-                                        View Profile
-                                    </button>
-                                </>
-                            )}
-                            {view === 'profile' && (
-                                <>
-                                    <UserProfile user={user} onLogout={handleLogout} />
-                                    <button className="secondary-btn" onClick={() => setView('dashboard')}>
-                                        Back to Dashboard
-                                    </button>
-                                </>
-                            )}
-                        </main>
-                    </div>
-                );
-            }
-        } else {
-            return (
-                <div className="App">
-                    <header className="App-header">
-                        <h1>AccountBird</h1>
-                    </header>
-                    <main>
-                        {showRegistration ? (
-                            <RegistrationForm />
-                        ) : (
-                            <>
-                                <LoginPage />
-                                <div style={{ textAlign: 'center', marginTop: '1rem' }}>
-                                    <p>Don't have an account?</p>
-                                    <button className="secondary-btn" onClick={() => setShowRegistration(true)}>
-                                        Register Here
-                                    </button>
-                                </div>
-                            </>
-                        )}
-                    </main>
-                </div>
-            );
-        }
-    } else {
-        return (
-            <div className="App">
-                <header className="App-header">
-                    <h1>AccountBird</h1>
-                </header>
-                <main>
-                    <InitializationForm onInitializationSuccess={handleInitializationSuccess} />
-                </main>
-            </div>
-        );
+
+    if (!isInitialized) {
+        return <InitializationForm onInitializationSuccess={() => setIsInitialized(true)} />;
     }
+
+    if (user) {
+        if (user.role === 'admin') {
+            return <AdminLayout user={user} onLogout={handleLogout} />;
+        } else {
+            return <UserLayout user={user} onLogout={handleLogout} />;
+        }
+    }
+
+    return (
+        <BrowserRouter>
+            <Routes>
+                <Route path="/login" element={<LoginPage />} />
+                <Route path="/register" element={<RegistrationForm />} />
+                <Route path="*" element={<Navigate to="/login" />} />
+            </Routes>
+        </BrowserRouter>
+    );
 }
 
 export default App;

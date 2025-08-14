@@ -1,90 +1,94 @@
 // client/src/components/ManageUsers.jsx
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import axios from 'axios';
 import './ManageUsers.css';
 
-const ManageUsers = ({ user }) => {
-    const [invitedUserData, setInvitedUserData] = useState({
-        firstName: '',
-        lastName: '',
-        email: '',
-        password: '',
-        role: 'contributor', // Default role for new users
-    });
-    const [message, setMessage] = useState('');
+const ManageUsers = ({ onLogout }) => {
+    const [users, setUsers] = useState([]);
+    const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
 
     const token = localStorage.getItem('token');
-    const config = {
+    const config = useMemo(() => ({
         headers: {
-            'Content-Type': 'application/json',
             'x-auth-token': token,
         },
-    };
+    }), [token]);
 
-    const handleInputChange = (e) => {
-        setInvitedUserData({ ...invitedUserData, [e.target.name]: e.target.value });
-    };
-
-    const handleInviteSubmit = async (e) => {
-        e.preventDefault();
-        setMessage('');
-        setError('');
-
+    const fetchUsers = useCallback(async () => {
+        setLoading(true);
         try {
-            const body = {
-                ...invitedUserData,
-                accountId: user.accountId,
-            };
-
-            await axios.post('http://localhost:5001/api/users/invite', body, config);
-
-            setMessage('User invited and created successfully!');
-            setInvitedUserData({
-                firstName: '',
-                lastName: '',
-                email: '',
-                password: '',
-                role: 'contributor',
-            });
+            const usersResponse = await axios.get('http://localhost:5001/api/admin/users', config);
+            setUsers(usersResponse.data);
+            setError('');
         } catch (err) {
-            setError(err.response?.data?.msg || 'An error occurred while inviting the user.');
-            console.error(err);
+            console.error('Error fetching users:', err);
+            setError(err.response?.data?.msg || 'Failed to fetch users.');
+            if (err.response?.status === 401 || err.response?.status === 403) {
+                onLogout();
+            }
+        } finally {
+            setLoading(false);
+        }
+    }, [onLogout, config]);
+
+    useEffect(() => {
+        if (!token) {
+            onLogout();
+            return;
+        }
+        fetchUsers();
+    }, [token, onLogout, fetchUsers]);
+
+    const handleUpdateUserRole = async (userId, newRole) => {
+        try {
+            const body = { role: newRole };
+            await axios.put(`http://localhost:5001/api/admin/user/${userId}`, body, config);
+            fetchUsers();
+        } catch (err) {
+            setError(err.response?.data?.msg || 'An error occurred while updating the user role.');
         }
     };
 
+    const handleDeleteUser = async (userId) => {
+        if (window.confirm('Are you sure you want to delete this user?')) {
+            try {
+                await axios.delete(`http://localhost:5001/api/admin/user/${userId}`, config);
+                fetchUsers();
+            } catch (err) {
+                setError(err.response?.data?.msg || 'An error occurred while deleting the user.');
+            }
+        }
+    };
+
+    if (loading) {
+        return <div className="loading-container">Loading users...</div>;
+    }
+
+    if (error) {
+        return <div className="error-message">{error}</div>;
+    }
+
     return (
         <div className="manage-users-container">
-            <h3>Invite a New User to Your Account</h3>
-            {message && <div className="success-message">{message}</div>}
-            {error && <div className="error-message">{error}</div>}
-
-            <form onSubmit={handleInviteSubmit}>
-                <div className="form-group">
-                    <label htmlFor="firstName">First Name</label>
-                    <input type="text" id="firstName" name="firstName" value={invitedUserData.firstName} onChange={handleInputChange} required />
-                </div>
-                <div className="form-group">
-                    <label htmlFor="lastName">Last Name</label>
-                    <input type="text" id="lastName" name="lastName" value={invitedUserData.lastName} onChange={handleInputChange} required />
-                </div>
-                <div className="form-group">
-                    <label htmlFor="email">Email Address</label>
-                    <input type="email" id="email" name="email" value={invitedUserData.email} onChange={handleInputChange} required />
-                </div>
-                <div className="form-group">
-                    <label htmlFor="password">Temporary Password</label>
-                    <input type="password" id="password" name="password" value={invitedUserData.password} onChange={handleInputChange} required />
-                </div>
-                <div className="form-group">
-                    <label htmlFor="role">User Role</label>
-                    <select id="role" name="role" value={invitedUserData.role} onChange={handleInputChange}>
-                        <option value="contributor">Contributor</option>
-                        <option value="subscriber">Subscriber</option>
-                    </select>
-                </div>
-                <button type="submit" className="submit-btn">Invite User</button>
-            </form>
+            <h3>All Users</h3>
+            <ul>
+                {users.length > 0 ? (
+                    users.map(user => (
+                        <li key={user._id}>
+                            <strong>Name:</strong> {user.firstName} {user.lastName}<br />
+                            <strong>Email:</strong> {user.email}<br />
+                            <strong>Role:</strong> {user.role}<br />
+                            <button onClick={() => handleUpdateUserRole(user._id, user.role === 'subscriber' ? 'contributor' : 'subscriber')}>
+                                Toggle to {user.role === 'subscriber' ? 'Contributor' : 'Subscriber'}
+                            </button>
+                            <button onClick={() => handleDeleteUser(user._id)}>Delete</button>
+                        </li>
+                    ))
+                ) : (
+                    <p>No regular users found.</p>
+                )}
+            </ul>
         </div>
     );
 };
