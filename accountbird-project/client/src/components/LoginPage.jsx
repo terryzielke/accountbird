@@ -65,6 +65,7 @@ const LoginPage = () => {
                     <input type="password" id="password" name="password" value={password} onChange={handleChange} required />
                 </div>
                 <button type="submit" className="submit-btn">Login</button>
+                <a href="/register" className="register-link">Don't have an account? Register here</a>
             </form>
         </div>
     );

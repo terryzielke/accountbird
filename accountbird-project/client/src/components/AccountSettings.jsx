@@ -1,6 +1,7 @@
 // client/src/components/AccountSettings.jsx
 import React, { useState, useMemo } from 'react';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom'; // Import useNavigate
 import './AccountSettings.css';
 
 const AccountSettings = ({ account, onLogout }) => {
@@ -10,6 +11,8 @@ const AccountSettings = ({ account, onLogout }) => {
     });
     const [message, setMessage] = useState('');
     const [error, setError] = useState('');
+
+    const navigate = useNavigate(); // Initialize useNavigate
 
     const token = localStorage.getItem('token');
     const config = useMemo(() => ({
@@ -39,6 +42,21 @@ const AccountSettings = ({ account, onLogout }) => {
             }
         }
     };
+    
+    const handleDeleteAccount = async () => {
+        if (window.confirm('Are you sure you want to delete this account and all its users? This action cannot be undone.')) {
+            try {
+                await axios.delete(`http://localhost:5001/api/admin/accounts/${accountData._id}`, config);
+                setMessage('Account and users deleted successfully!');
+                navigate('/admin/accounts'); // Redirect to the accounts list
+            } catch (err) {
+                setError(err.response?.data?.msg || 'An error occurred while deleting the account.');
+                if (err.response?.status === 401 || err.response?.status === 403) {
+                    onLogout();
+                }
+            }
+        }
+    };
 
     return (
         <div className="account-settings-container">
@@ -55,6 +73,7 @@ const AccountSettings = ({ account, onLogout }) => {
                 </div>
                 <button type="submit" className="submit-btn">Update Settings</button>
             </form>
+            <button onClick={handleDeleteAccount} className="delete-btn">Delete Account</button>
         </div>
     );
 };

@@ -28,6 +28,11 @@ const Sidebar = ({ userRole }) => {
                             <li>
                                 <Link to="/profile">Profile</Link>
                             </li>
+                            {userRole === 'primary_user' && (
+                                <li>
+                                    <Link to="/users">Manage Users</Link>
+                                </li>
+                            )}
                         </>
                     )}
                 </ul>

@@ -1,11 +1,11 @@
-// client/src/components/AccountUsers.jsx
+// client/src/components/PrimaryUserManageUsers.jsx
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import axios from 'axios';
-import UserDetail from './UserDetail';
-import AddUserForm from './AddUserForm'; // Import the new component
-import './AccountUsers.css';
+import PrimaryUserAddUserForm from './PrimaryUserAddUserForm';
+import PrimaryUserUserDetail from './PrimaryUserUserDetail';
+import './PrimaryUserManageUsers.css';
 
-const AccountUsers = ({ accountId, onLogout }) => {
+const PrimaryUserManageUsers = ({ user, onLogout }) => {
     const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
@@ -16,62 +16,62 @@ const AccountUsers = ({ accountId, onLogout }) => {
     const token = localStorage.getItem('token');
     const config = useMemo(() => ({
         headers: {
-            'Content-Type': 'application/json',
             'x-auth-token': token,
         },
     }), [token]);
 
-    const fetchAccountUsers = useCallback(async () => {
+    const fetchUsers = useCallback(async () => {
         setLoading(true);
         try {
-            const usersResponse = await axios.get(`http://localhost:5001/api/admin/accounts/${accountId}/users`, config);
+            const usersResponse = await axios.get('http://localhost:5001/api/account/users', config);
             setUsers(usersResponse.data);
             setError('');
         } catch (err) {
-            console.error('Error fetching account users:', err);
-            setError(err.response?.data?.msg || 'Failed to fetch account users.');
+            console.error('Error fetching users:', err);
+            setError(err.response?.data?.msg || 'Failed to fetch users.');
             if (err.response?.status === 401 || err.response?.status === 403) {
                 onLogout();
             }
         } finally {
             setLoading(false);
         }
-    }, [onLogout, config, accountId]);
+    }, [onLogout, config]);
 
     useEffect(() => {
         if (!token) {
             onLogout();
             return;
         }
-        fetchAccountUsers();
-    }, [token, onLogout, fetchAccountUsers]);
+        fetchUsers();
+    }, [token, onLogout, fetchUsers]);
 
-    const handleUserAdded = () => {
-        setMessage('User added successfully!');
+    const handleUserAdded = (msg) => {
+        setMessage(msg);
         setView('list');
-        fetchAccountUsers();
+        fetchUsers();
     };
 
     const handleDeleteUser = async (userId) => {
         if (window.confirm('Are you sure you want to delete this user?')) {
             try {
-                await axios.delete(`http://localhost:5001/api/admin/users/${userId}`, config);
+                await axios.delete(`http://localhost:5001/api/account/users/${userId}`, config);
                 setMessage('User deleted successfully!');
-                fetchAccountUsers();
+                fetchUsers();
             } catch (err) {
                 setError(err.response?.data?.msg || 'An error occurred while deleting the user.');
             }
         }
     };
 
-    const handleEditClick = (user) => {
-        setSelectedUser(user);
+    const handleEditClick = (u) => {
+        setSelectedUser(u);
         setView('detail');
     };
 
     const handleBackClick = () => {
         setSelectedUser(null);
         setView('list');
+        fetchUsers();
     };
 
     if (loading) {
@@ -83,28 +83,28 @@ const AccountUsers = ({ accountId, onLogout }) => {
     }
 
     if (view === 'detail') {
-        return <UserDetail user={selectedUser} onBack={handleBackClick} onLogout={onLogout} />;
+        return <PrimaryUserUserDetail user={selectedUser} onBack={handleBackClick} onLogout={onLogout} />;
     }
 
     if (view === 'add') {
-        return <AddUserForm accountId={accountId} onUserAdded={handleUserAdded} onBack={handleBackClick} onLogout={onLogout} />;
+        return <PrimaryUserAddUserForm onUserAdded={handleUserAdded} onBack={handleBackClick} onLogout={onLogout} />;
     }
 
     return (
-        <div className="account-users-container">
-            <h4>Users in this Account</h4>
+        <div className="manage-users-container">
+            <h4>Users in Your Account</h4>
+            {message && <div className="success-message">{message}</div>}
+            {error && <div className="error-message">{error}</div>}
             <div className="user-list">
-                {message && <div className="success-message">{message}</div>}
-                {error && <div className="error-message">{error}</div>}
                 <ul>
                     {users.length > 0 ? (
-                        users.map(user => (
-                            <li key={user._id}>
-                                <strong>Name:</strong> {user.firstName} {user.lastName}<br />
-                                <strong>Email:</strong> {user.email}<br />
-                                <strong>Role:</strong> {user.role}<br />
-                                <button onClick={() => handleEditClick(user)}>Edit</button>
-                                <button onClick={() => handleDeleteUser(user._id)}>Delete</button>
+                        users.map(u => (
+                            <li key={u._id}>
+                                <strong>Name:</strong> {u.firstName} {u.lastName}<br />
+                                <strong>Email:</strong> {u.email}<br />
+                                <strong>Role:</strong> {u.role}<br />
+                                <button onClick={() => handleEditClick(u)}>Edit</button>
+                                <button onClick={() => handleDeleteUser(u._id)}>Delete</button>
                             </li>
                         ))
                     ) : (
@@ -117,4 +117,4 @@ const AccountUsers = ({ accountId, onLogout }) => {
     );
 };
 
-export default AccountUsers;
+export default PrimaryUserManageUsers;

@@ -1,9 +1,9 @@
 // client/src/components/ManageUsers.jsx
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import axios from 'axios';
-import './ManageUsers.css';
+import './AdminManageUsers.css';
 
-const ManageUsers = ({ onLogout }) => {
+const AdminManageUsers = ({ onLogout }) => {
     const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
@@ -93,4 +93,4 @@ const ManageUsers = ({ onLogout }) => {
     );
 };
 
-export default ManageUsers;
+export default AdminManageUsers;

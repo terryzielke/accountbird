@@ -89,6 +89,7 @@ const RegistrationForm = () => {
                     </select>
                 </div>
                 <button type="submit" className="submit-btn">Register</button>
+                <a href="/login" className="login-link">Already have an account? Login here</a>
             </form>
         </div>
     );

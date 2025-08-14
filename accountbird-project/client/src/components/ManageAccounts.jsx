@@ -2,12 +2,14 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
+import AddAccountForm from './AddAccountForm'; // Import the new component
 import './ManageAccounts.css';
 
 const ManageAccounts = ({ onLogout }) => {
     const [accounts, setAccounts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
+    const [view, setView] = useState('list'); // Add a view state
 
     const token = localStorage.getItem('token');
     const config = useMemo(() => ({
@@ -40,6 +42,12 @@ const ManageAccounts = ({ onLogout }) => {
         }
         fetchAccounts();
     }, [token, onLogout, fetchAccounts]);
+    
+    // Create a function to handle the new account creation success
+    const handleAccountAdded = () => {
+        setView('list');
+        fetchAccounts();
+    };
 
     if (loading) {
         return <div className="loading-container">Loading accounts...</div>;
@@ -49,9 +57,14 @@ const ManageAccounts = ({ onLogout }) => {
         return <div className="error-message">{error}</div>;
     }
 
+    if (view === 'add') {
+        return <AddAccountForm onAccountAdded={handleAccountAdded} onLogout={onLogout} />;
+    }
+
     return (
         <div className="manage-accounts-container">
             <h3>All Accounts</h3>
+            <button onClick={() => setView('add')} className="secondary-btn">Create New Account</button>
             <ul>
                 {accounts.length > 0 ? (
                     accounts.map(account => (

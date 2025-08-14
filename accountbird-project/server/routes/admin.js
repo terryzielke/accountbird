@@ -2,6 +2,7 @@
 const express = require('express');
 const router = express.Router();
 const auth = require('../middleware/auth');
+const bcrypt = require('bcryptjs');
 
 // Import our models
 const User = require('../models/User');
@@ -111,11 +112,11 @@ router.delete('/accounts/:accountId', auth(['admin']), async (req, res) => {
 });
 
 /**
- * @route   GET /api/admin/user/:userId
+ * @route   GET /api/admin/users/:userId
  * @desc    Get a single user's details by ID
  * @access  Private (Admin only)
  */
-router.get('/user/:userId', auth(['admin']), async (req, res) => {
+router.get('/users/:userId', auth(['admin']), async (req, res) => {
     try {
         const user = await User.findById(req.params.userId).select('-password');
         if (!user) {
@@ -129,11 +130,11 @@ router.get('/user/:userId', auth(['admin']), async (req, res) => {
 });
 
 /**
- * @route   PUT /api/admin/user/:userId
+ * @route   PUT /api/admin/users/:userId
  * @desc    Update a user's details (name, email, role)
  * @access  Private (Admin only)
  */
-router.put('/user/:userId', auth(['admin']), async (req, res) => {
+router.put('/users/:userId', auth(['admin']), async (req, res) => {
     const { firstName, lastName, email, role } = req.body;
     const userFields = {};
     if (firstName) userFields.firstName = firstName;
@@ -171,11 +172,42 @@ router.put('/user/:userId', auth(['admin']), async (req, res) => {
 });
 
 /**
+ * @route   PUT /api/admin/users/:userId/password
+ * @desc    Admin updates a user's password
+ * @access  Private (Admin only)
+ */
+router.put('/users/:userId/password', auth(['admin']), async (req, res) => {
+    const { newPassword } = req.body;
+
+    if (!newPassword) {
+        return res.status(400).json({ msg: 'New password is required.' });
+    }
+
+    try {
+        let user = await User.findById(req.params.userId);
+
+        if (!user) {
+            return res.status(404).json({ msg: 'User not found.' });
+        }
+
+        // Hash the new password
+        const salt = await bcrypt.genSalt(10);
+        user.password = await bcrypt.hash(newPassword, salt);
+
+        await user.save();
+        res.json({ msg: 'Password updated successfully' });
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server Error');
+    }
+});
+
+/**
  * @route   DELETE /api/admin/user/:userId
  * @desc    Delete a user by ID
  * @access  Private (Admin only)
  */
-router.delete('/user/:userId', auth(['admin']), async (req, res) => {
+router.delete('/users/:userId', auth(['admin']), async (req, res) => {
     try {
         const user = await User.findById(req.params.userId);
 
@@ -203,6 +235,89 @@ router.get('/accounts/:accountId/users', auth(['admin']), async (req, res) => {
         res.json(users);
     } catch (err) {
         console.error(err.message);
+        res.status(500).send('Server Error');
+    }
+});
+
+/**
+ * @route   POST /api/admin/accounts/:accountId/users
+ * @desc    Admin adds a new user to a specific account
+ * @access  Private (Admin only)
+ */
+router.post('/accounts/:accountId/users', auth(['admin']), async (req, res) => {
+    const { firstName, lastName, email, role, password } = req.body;
+    const { accountId } = req.params;
+
+    if (!firstName || !lastName || !email || !role || !password || !accountId) {
+        return res.status(400).json({ msg: 'Please enter all fields.' });
+    }
+
+    try {
+        let userExists = await User.findOne({ email });
+        if (userExists) {
+            return res.status(400).json({ msg: 'User with that email already exists.' });
+        }
+
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(password, salt);
+
+        const newUser = new User({
+            accountId: accountId,
+            firstName,
+            lastName,
+            email,
+            password: hashedPassword,
+            role,
+        });
+
+        const savedUser = await newUser.save();
+        res.status(201).json(savedUser);
+    } catch (err) {
+        console.error('Admin user creation error:', err.message);
+        res.status(500).send('Server Error');
+    }
+});
+
+/**
+ * @route   POST /api/admin/accounts
+ * @desc    Admin creates a new account with a primary user
+ * @access  Private (Admin only)
+ */
+router.post('/accounts', auth(['admin']), async (req, res) => {
+    const { firstName, lastName, email, password, accountType } = req.body;
+
+    if (!firstName || !lastName || !email || !password || !accountType) {
+        return res.status(400).json({ msg: 'Please enter all fields.' });
+    }
+
+    try {
+        let userExists = await User.findOne({ email });
+        if (userExists) {
+            return res.status(400).json({ msg: 'User with that email already exists.' });
+        }
+
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(password, salt);
+
+        const newAccount = new Account({ accountType });
+        const savedAccount = await newAccount.save();
+
+        const newUser = new User({
+            accountId: savedAccount.id,
+            firstName,
+            lastName,
+            email,
+            password: hashedPassword,
+            role: 'primary_user',
+        });
+
+        const savedUser = await newUser.save();
+        savedAccount.primaryUser = savedUser.id;
+        await savedAccount.save();
+
+        res.status(201).json({ msg: 'Account and primary user created successfully', user: savedUser, account: savedAccount });
+    } catch (err) {
+        console.error('Admin account creation error:', err.message);
         res.status(500).send('Server Error');
     }
 });

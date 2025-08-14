@@ -6,7 +6,7 @@ import Toolbar from './Toolbar';
 import Sidebar from './Sidebar';
 import AdminDashboard from './AdminDashboard';
 import ManageAccounts from './ManageAccounts';
-import ManageUsers from './ManageUsers';
+import AdminManageUsers from './AdminManageUsers';
 import AccountDetail from './AccountDetail';
 
 const AdminLayout = ({ user, onLogout }) => {
@@ -21,7 +21,7 @@ const AdminLayout = ({ user, onLogout }) => {
                             <Route path="/" element={<Navigate to="/admin-dashboard" />} />
                             <Route path="/admin-dashboard" element={<AdminDashboard onLogout={onLogout} />} />
                             <Route path="/admin/accounts" element={<ManageAccounts onLogout={onLogout} />} />
-                            <Route path="/admin/users" element={<ManageUsers onLogout={onLogout} />} />
+                            <Route path="/admin/users" element={<AdminManageUsers onLogout={onLogout} />} />
                             <Route path="/admin/accounts/:accountId" element={<AccountDetail onLogout={onLogout} />} />
                             <Route path="*" element={<div>Page Not Found</div>} />
                         </Routes>
