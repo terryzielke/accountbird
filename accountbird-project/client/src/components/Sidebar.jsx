@@ -19,6 +19,9 @@ const Sidebar = ({ userRole }) => {
                             <li>
                                 <Link to="/admin/accounts">Accounts</Link>
                             </li>
+                            <li>
+                                <Link to="/admin/settings">Settings</Link>
+                            </li>
                         </>
                     ) : (
                         <>

@@ -3,10 +3,59 @@ const express = require('express');
 const router = express.Router();
 const auth = require('../middleware/auth');
 const bcrypt = require('bcryptjs');
+const mongoose = require('mongoose');
 
 // Import our models
 const User = require('../models/User');
 const Account = require('../models/Account');
+const Settings = require('../models/Settings');
+
+/**
+ * @route   GET /api/admin/settings
+ * @desc    Get site-wide settings
+ * @access  Private (Admin only)
+ */
+router.get('/settings', auth(['admin']), async (req, res) => {
+    try {
+        const settings = await Settings.findOne();
+        if (!settings) {
+            return res.status(404).json({ msg: 'Settings not found' });
+        }
+        res.json(settings);
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server Error');
+    }
+});
+
+/**
+ * @route   PUT /api/admin/settings
+ * @desc    Update site-wide settings
+ * @access  Private (Admin only)
+ */
+router.put('/settings', auth(['admin']), async (req, res) => {
+    const { siteName, version } = req.body;
+    const settingsFields = {};
+    if (siteName) settingsFields.siteName = siteName;
+    if (version) settingsFields.version = version;
+
+    try {
+        let settings = await Settings.findOne();
+        if (!settings) {
+            // If settings don't exist, create them (should be handled during initialization)
+            settings = new Settings(settingsFields);
+            await settings.save();
+        } else {
+            // Update existing settings
+            settings = await Settings.findOneAndUpdate({}, { $set: settingsFields }, { new: true });
+        }
+
+        res.json(settings);
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server Error');
+    }
+});
 
 /**
  * @route   GET /api/admin/users
