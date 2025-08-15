@@ -1,10 +1,10 @@
-// client/src/components/AccountSettings.jsx
+// client/src/components/AdminAccountSettings.jsx
 import React, { useState, useMemo } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom'; // Import useNavigate
-import './AccountSettings.css';
+import './AdminAccountSettings.css';
 
-const AccountSettings = ({ account, onLogout }) => {
+const AdminAccountSettings = ({ account, onLogout }) => {
     const [accountData, setAccountData] = useState(account);
     const [formData, setFormData] = useState({
         accountType: account.accountType,
@@ -78,4 +78,4 @@ const AccountSettings = ({ account, onLogout }) => {
     );
 };
 
-export default AccountSettings;
+export default AdminAccountSettings;

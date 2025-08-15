@@ -1,11 +1,11 @@
-// client/src/components/ManageAccounts.jsx
+// client/src/components/AdminManageAccounts.jsx
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
-import AddAccountForm from './AddAccountForm'; // Import the new component
-import './ManageAccounts.css';
+import AdminAddAccountForm from './AdminAddAccountForm'; // Import the new component
+import './AdminManageAccounts.css';
 
-const ManageAccounts = ({ onLogout }) => {
+const AdminManageAccounts = ({ onLogout }) => {
     const [accounts, setAccounts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
@@ -58,7 +58,7 @@ const ManageAccounts = ({ onLogout }) => {
     }
 
     if (view === 'add') {
-        return <AddAccountForm onAccountAdded={handleAccountAdded} onLogout={onLogout} />;
+        return <AdminAddAccountForm onAccountAdded={handleAccountAdded} onLogout={onLogout} />;
     }
 
     return (
@@ -84,4 +84,4 @@ const ManageAccounts = ({ onLogout }) => {
     );
 };
 
-export default ManageAccounts;
+export default AdminManageAccounts;

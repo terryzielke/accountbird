@@ -1,9 +1,9 @@
-// client/src/components/AddUserForm.jsx
+// client/src/components/AdminAddUserForm.jsx
 import React, { useState, useMemo } from 'react';
 import axios from 'axios';
-import './AddUserForm.css';
+import './AdminAddUserForm.css';
 
-const AddUserForm = ({ accountId, onUserAdded, onBack, onLogout }) => {
+const AdminAddUserForm = ({ accountId, onUserAdded, onBack, onLogout }) => {
     const [addUserData, setAddUserData] = useState({
         firstName: '',
         lastName: '',
@@ -79,4 +79,4 @@ const AddUserForm = ({ accountId, onUserAdded, onBack, onLogout }) => {
     );
 };
 
-export default AddUserForm;
+export default AdminAddUserForm;

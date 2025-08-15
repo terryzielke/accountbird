@@ -5,9 +5,9 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import Toolbar from './Toolbar';
 import Sidebar from './Sidebar';
 import AdminDashboard from './AdminDashboard';
-import ManageAccounts from './ManageAccounts';
+import AdminManageAccounts from './AdminManageAccounts';
 import AdminManageUsers from './AdminManageUsers';
-import AccountDetail from './AccountDetail';
+import AdminAccountDetail from './AdminAccountDetail';
 
 const AdminLayout = ({ user, onLogout }) => {
     return (
@@ -18,11 +18,11 @@ const AdminLayout = ({ user, onLogout }) => {
                     <Sidebar userRole={user.role} />
                     <div className="content-area">
                         <Routes>
-                            <Route path="/" element={<Navigate to="/admin-dashboard" />} />
-                            <Route path="/admin-dashboard" element={<AdminDashboard onLogout={onLogout} />} />
-                            <Route path="/admin/accounts" element={<ManageAccounts onLogout={onLogout} />} />
+                            <Route path="/admin/" element={<Navigate to="/admin/dashboard" />} />
+                            <Route path="/admin/dashboard" element={<AdminDashboard onLogout={onLogout} />} />
+                            <Route path="/admin/accounts" element={<AdminManageAccounts onLogout={onLogout} />} />
                             <Route path="/admin/users" element={<AdminManageUsers onLogout={onLogout} />} />
-                            <Route path="/admin/accounts/:accountId" element={<AccountDetail onLogout={onLogout} />} />
+                            <Route path="/admin/accounts/:accountId" element={<AdminAccountDetail onLogout={onLogout} />} />
                             <Route path="*" element={<div>Page Not Found</div>} />
                         </Routes>
                     </div>

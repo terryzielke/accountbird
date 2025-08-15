@@ -1,11 +1,11 @@
-// client/src/components/AccountUsers.jsx
+// client/src/components/AdminAccountUsers.jsx
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import axios from 'axios';
 import UserDetail from './UserDetail';
-import AddUserForm from './AddUserForm'; // Import the new component
-import './AccountUsers.css';
+import AdminAddUserForm from './AdminAddUserForm'; // Import the new component
+import './AdminAccountUsers.css';
 
-const AccountUsers = ({ accountId, onLogout }) => {
+const AdminAccountUsers = ({ accountId, onLogout }) => {
     const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
@@ -87,7 +87,7 @@ const AccountUsers = ({ accountId, onLogout }) => {
     }
 
     if (view === 'add') {
-        return <AddUserForm accountId={accountId} onUserAdded={handleUserAdded} onBack={handleBackClick} onLogout={onLogout} />;
+        return <AdminAddUserForm accountId={accountId} onUserAdded={handleUserAdded} onBack={handleBackClick} onLogout={onLogout} />;
     }
 
     return (
@@ -117,4 +117,4 @@ const AccountUsers = ({ accountId, onLogout }) => {
     );
 };
 
-export default AccountUsers;
+export default AdminAccountUsers;

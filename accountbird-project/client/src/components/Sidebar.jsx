@@ -11,13 +11,13 @@ const Sidebar = ({ userRole }) => {
                     {userRole === 'admin' ? (
                         <>
                             <li>
-                                <Link to="/admin-dashboard">Admin Dashboard</Link>
+                                <Link to="/admin/dashboard">Dashboard</Link>
                             </li>
                             <li>
-                                <Link to="/admin/users">Manage Users</Link>
+                                <Link to="/admin/users">All Users</Link>
                             </li>
                             <li>
-                                <Link to="/admin/accounts">Manage Accounts</Link>
+                                <Link to="/admin/accounts">Accounts</Link>
                             </li>
                         </>
                     ) : (
@@ -30,7 +30,7 @@ const Sidebar = ({ userRole }) => {
                             </li>
                             {userRole === 'primary_user' && (
                                 <li>
-                                    <Link to="/users">Manage Users</Link>
+                                    <Link to="/users">Users</Link>
                                 </li>
                             )}
                         </>

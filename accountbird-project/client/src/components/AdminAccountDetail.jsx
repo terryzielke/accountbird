@@ -1,12 +1,12 @@
-// client/src/components/AccountDetail.jsx
+// client/src/components/AdminAccountDetail.jsx
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import axios from 'axios';
-import AccountSettings from './AccountSettings';
-import AccountUsers from './AccountUsers';
-import './AccountDetail.css';
+import AdminAccountSettings from './AdminAccountSettings';
+import AdminAccountUsers from './AdminAccountUsers';
+import './AdminAccountDetail.css';
 
-const AccountDetail = ({ onLogout }) => {
+const AdminAccountDetail = ({ onLogout }) => {
     const { accountId } = useParams();
     const [account, setAccount] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -72,8 +72,8 @@ const AccountDetail = ({ onLogout }) => {
             </div>
             
             <div className="account-detail-content">
-                {view === 'users' && <AccountUsers accountId={accountId} onLogout={onLogout} />}
-                {view === 'settings' && <AccountSettings accountId={accountId} account={account} onLogout={onLogout} />}
+                {view === 'users' && <AdminAccountUsers accountId={accountId} onLogout={onLogout} />}
+                {view === 'settings' && <AdminAccountSettings accountId={accountId} account={account} onLogout={onLogout} />}
             </div>
 
             <Link to="/admin/accounts" className="back-link">Back to Accounts</Link>
@@ -81,4 +81,4 @@ const AccountDetail = ({ onLogout }) => {
     );
 };
 
-export default AccountDetail;
+export default AdminAccountDetail;

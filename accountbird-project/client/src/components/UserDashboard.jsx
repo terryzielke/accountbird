@@ -1,9 +1,9 @@
-// client/src/components/Dashboard.jsx
+// client/src/components/UserDashboard.jsx
 import React from 'react';
 import { Link } from 'react-router-dom';
-import './Dashboard.css';
+import './UserDashboard.css';
 
-const Dashboard = ({ user, onLogout }) => {
+const UserDashboard = ({ user, onLogout }) => {
     const displayName = user.firstName || user.userName || user.email;
 
     return (
@@ -19,4 +19,4 @@ const Dashboard = ({ user, onLogout }) => {
     );
 };
 
-export default Dashboard;
+export default UserDashboard;
