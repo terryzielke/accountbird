@@ -92,14 +92,6 @@ const UserDetail = ({ user, onBack, onLogout }) => {
                     <label htmlFor="email">Email Address</label>
                     <input type="email" id="email" name="email" value={formData.email} onChange={handleChange} />
                 </div>
-                <div className="form-group">
-                    <label htmlFor="role">User Role</label>
-                    <select id="role" name="role" value={formData.role} onChange={handleChange}>
-                        <option value="primary_user">Primary User</option>
-                        <option value="contributor">Contributor</option>
-                        <option value="subscriber">Subscriber</option>
-                    </select>
-                </div>
                 <button type="submit" className="submit-btn">Update User</button>
             </form>
 

@@ -7,6 +7,9 @@ const bcrypt = require('bcryptjs');
 // Import models
 const User = require('../models/User');
 const Account = require('../models/Account');
+const Settings = require('../models/Settings');
+
+const { populateAccountType } = require('../utils/accountHelpers');
 
 /**
  * @route   GET /api/account/users
@@ -32,7 +35,6 @@ router.post('/users', auth(), async (req, res) => {
     const { firstName, lastName, email, role, password } = req.body;
     const { accountId } = req.user;
 
-    // Check if the authenticated user is the primary user
     const account = await Account.findById(accountId);
     if (String(account.primaryUser) !== String(req.user.id)) {
         return res.status(403).json({ msg: 'Access denied: You are not the primary user for this account' });
@@ -187,6 +189,67 @@ router.put('/users/:userId/password', auth(), async (req, res) => {
         res.json({ msg: 'Password updated successfully' });
     } catch (err) {
         console.error(err.message);
+        res.status(500).send('Server Error');
+    }
+});
+
+/**
+ * @route   GET /api/account/details
+ * @desc    Get the authenticated user's account details
+ * @access  Private
+ */
+router.get('/details', auth(), async (req, res) => {
+    try {
+        const account = await Account.findById(req.user.accountId);
+        if (!account) {
+            return res.status(404).json({ msg: 'Account not found' });
+        }
+        
+        // Fetch all subscription types from settings
+        const settings = await Settings.findOne();
+        const subscriptionType = settings.subscriptionTypes.find(sub => String(sub._id) === String(account.accountType));
+        
+        const populatedAccount = {
+            ...account._doc,
+            accountType: subscriptionType ? { name: subscriptionType.name, _id: subscriptionType._id } : { name: 'Unknown', _id: 'Unknown' }
+        };
+
+        res.json(populatedAccount);
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server Error');
+    }
+});
+
+/**
+ * @route   PUT /api/account/:accountId
+ * @desc    Primary user updates their account details
+ * @access  Private (Primary User only)
+ */
+router.put('/:accountId', auth(), async (req, res) => {
+    const { accountTypeId } = req.body;
+    const { accountId } = req.params;
+    const { id } = req.user;
+
+    try {
+        const accountToUpdate = await Account.findById(accountId);
+        if (!accountToUpdate) {
+            return res.status(404).json({ msg: 'Account not found' });
+        }
+
+        // Ensure the authenticated user is the primary user
+        if (String(accountToUpdate.primaryUser) !== String(id)) {
+            return res.status(403).json({ msg: 'Access denied: You are not the primary user for this account' });
+        }
+
+        if (accountTypeId) {
+            accountToUpdate.accountType = accountTypeId;
+        }
+
+        await accountToUpdate.save();
+        res.json({ msg: 'Account updated successfully' });
+    } catch (err) {
+        console.error('Account update error:', err.message);
         res.status(500).send('Server Error');
     }
 });

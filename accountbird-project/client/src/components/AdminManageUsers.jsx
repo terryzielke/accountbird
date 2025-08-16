@@ -39,7 +39,7 @@ const AdminManageUsers = ({ onLogout }) => {
         }
         fetchUsers();
     }, [token, onLogout, fetchUsers]);
-
+/*
     const handleUpdateUserRole = async (userId, newRole) => {
         try {
             const body = { role: newRole };
@@ -60,7 +60,7 @@ const AdminManageUsers = ({ onLogout }) => {
             }
         }
     };
-
+*/
     if (loading) {
         return <div className="loading-container">Loading users...</div>;
     }
@@ -79,10 +79,6 @@ const AdminManageUsers = ({ onLogout }) => {
                             <strong>Name:</strong> {user.firstName} {user.lastName}<br />
                             <strong>Email:</strong> {user.email}<br />
                             <strong>Role:</strong> {user.role}<br />
-                            <button onClick={() => handleUpdateUserRole(user._id, user.role === 'subscriber' ? 'contributor' : 'subscriber')}>
-                                Toggle to {user.role === 'subscriber' ? 'Contributor' : 'Subscriber'}
-                            </button>
-                            <button onClick={() => handleDeleteUser(user._id)}>Delete</button>
                         </li>
                     ))
                 ) : (

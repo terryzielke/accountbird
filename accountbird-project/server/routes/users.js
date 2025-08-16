@@ -8,6 +8,7 @@ const auth = require('../middleware/auth');
 // Import our new models
 const User = require('../models/User');
 const Account = require('../models/Account');
+const Settings = require('../models/Settings');
 
 /**
  * @route   POST /api/users/register
@@ -98,42 +99,36 @@ router.post('/register', async (req, res) => {
  * @access  Private
  */
 router.post('/invite', auth(), async (req, res) => {
-    const { firstName, lastName, email, role, password, accountId } = req.body;
+    const { firstName, lastName, email, password, accountId } = req.body;
 
-    // 1. Input validation
-    if (!firstName || !lastName || !email || !role || !password || !accountId) {
+    if (!firstName || !lastName || !email || !password || !accountId) {
         return res.status(400).json({ msg: 'Please enter all fields.' });
     }
 
     try {
-        // 2. Check if a user with the same email already exists
         let userExists = await User.findOne({ email });
         if (userExists) {
             return res.status(400).json({ msg: 'User with that email already exists.' });
         }
 
-        // 3. Hash the password
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
 
-        // 4. Create the new user and link to the existing account
         const newUser = new User({
             accountId: accountId,
             firstName,
             lastName,
             email,
             password: hashedPassword,
-            role,
+            role: 'user',
         });
 
         const savedUser = await newUser.save();
 
-        // 5. Create and sign JWT for the new user (for potential automatic login)
         const payload = {
             user: {
                 id: savedUser.id,
                 role: savedUser.role,
-                // Corrected: Use the accountId from the request body
                 accountId: accountId
             },
         };
@@ -159,6 +154,24 @@ router.post('/invite', auth(), async (req, res) => {
         );
     } catch (err) {
         console.error('User invitation error:', err.message);
+        res.status(500).send('Server Error');
+    }
+});
+
+/**
+ * @route   GET /api/users/subscription-types
+ * @desc    Get all available subscription types
+ * @access  Public
+ */
+router.get('/subscription-types', async (req, res) => {
+    try {
+        const settings = await Settings.findOne();
+        if (!settings || !settings.subscriptionTypes) {
+            return res.json([]);
+        }
+        res.json(settings.subscriptionTypes);
+    } catch (err) {
+        console.error(err.message);
         res.status(500).send('Server Error');
     }
 });

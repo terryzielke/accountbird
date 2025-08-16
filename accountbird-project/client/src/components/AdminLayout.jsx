@@ -19,7 +19,7 @@ const AdminLayout = ({ user, onLogout }) => {
                     <Sidebar userRole={user.role} />
                     <div className="content-area">
                         <Routes>
-                            <Route path="/admin/" element={<Navigate to="/admin/dashboard" />} />
+                            <Route path="/" element={<Navigate to="/admin/dashboard" />} />
                             <Route path="/admin/dashboard" element={<AdminDashboard onLogout={onLogout} />} />
                             <Route path="/admin/accounts" element={<AdminManageAccounts onLogout={onLogout} />} />
                             <Route path="/admin/users" element={<AdminManageUsers onLogout={onLogout} />} />

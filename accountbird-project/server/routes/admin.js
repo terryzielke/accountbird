@@ -11,53 +11,6 @@ const Account = require('../models/Account');
 const Settings = require('../models/Settings');
 
 /**
- * @route   GET /api/admin/settings
- * @desc    Get site-wide settings
- * @access  Private (Admin only)
- */
-router.get('/settings', auth(['admin']), async (req, res) => {
-    try {
-        const settings = await Settings.findOne();
-        if (!settings) {
-            return res.status(404).json({ msg: 'Settings not found' });
-        }
-        res.json(settings);
-    } catch (err) {
-        console.error(err.message);
-        res.status(500).send('Server Error');
-    }
-});
-
-/**
- * @route   PUT /api/admin/settings
- * @desc    Update site-wide settings
- * @access  Private (Admin only)
- */
-router.put('/settings', auth(['admin']), async (req, res) => {
-    const { siteName, version } = req.body;
-    const settingsFields = {};
-    if (siteName) settingsFields.siteName = siteName;
-    if (version) settingsFields.version = version;
-
-    try {
-        let settings = await Settings.findOne();
-        if (!settings) {
-            // If settings don't exist, create them (should be handled during initialization)
-            settings = new Settings(settingsFields);
-            await settings.save();
-        } else {
-            // Update existing settings
-            settings = await Settings.findOneAndUpdate({}, { $set: settingsFields }, { new: true });
-        }
-
-        res.json(settings);
-    } catch (err) {
-        console.error(err.message);
-        res.status(500).send('Server Error');
-    }
-});
-
-/**
  * @route   GET /api/admin/users
  * @desc    Get a list of all regular users
  * @access  Private (Admin only)
@@ -79,8 +32,23 @@ router.get('/users', auth(['admin']), async (req, res) => {
  */
 router.get('/accounts', auth(['admin']), async (req, res) => {
     try {
+        // Fetch all accounts
         const accounts = await Account.find().populate('primaryUser', 'firstName lastName email');
-        res.json(accounts);
+        
+        // Fetch all subscription types from settings
+        const settings = await Settings.findOne();
+        const subscriptionTypes = settings ? settings.subscriptionTypes : [];
+        
+        // Manually map the subscription type name to each account
+        const populatedAccounts = accounts.map(account => {
+            const subscriptionType = subscriptionTypes.find(sub => String(sub._id) === String(account.accountType));
+            return {
+                ...account._doc,
+                accountType: subscriptionType ? subscriptionType.name : 'Unknown'
+            };
+        });
+        
+        res.json(populatedAccounts);
     } catch (err) {
         console.error(err.message);
         res.status(500).send('Server Error');
@@ -99,8 +67,19 @@ router.get('/accounts/:accountId', auth(['admin']), async (req, res) => {
         if (!account) {
             return res.status(404).json({ msg: 'Account not found' });
         }
+        
+        // Fetch all subscription types from settings
+        const settings = await Settings.findOne();
+        const subscriptionTypes = settings ? settings.subscriptionTypes : [];
 
-        res.json(account);
+        // Manually map the subscription type name to the account
+        const subscriptionType = subscriptionTypes.find(sub => String(sub._id) === String(account.accountType));
+        const populatedAccount = {
+            ...account._doc,
+            accountType: subscriptionType ? { name: subscriptionType.name, _id: subscriptionType._id } : { name: 'Unknown', _id: 'Unknown' }
+        };
+
+        res.json(populatedAccount);
     } catch (err) {
         console.error(err.message);
         res.status(500).send('Server Error');
@@ -114,20 +93,29 @@ router.get('/accounts/:accountId', auth(['admin']), async (req, res) => {
  */
 router.put('/accounts/:accountId', auth(['admin']), async (req, res) => {
     try {
-        const { accountType } = req.body;
+        const { accountTypeId } = req.body;
         const account = await Account.findById(req.params.accountId);
 
         if (!account) {
             return res.status(404).json({ msg: 'Account not found' });
         }
 
-        // Update the account type if provided
-        if (accountType) {
-            account.accountType = accountType;
+        if (accountTypeId) {
+            account.accountType = accountTypeId;
         }
 
         await account.save();
-        res.json(account);
+        
+        // After saving, we need to manually populate the accountType field
+        const settings = await Settings.findOne();
+        const subscriptionType = settings.subscriptionTypes.find(sub => String(sub._id) === String(account.accountType));
+        
+        const updatedAccount = {
+            ...account._doc,
+            accountType: subscriptionType ? subscriptionType.name : 'Unknown'
+        };
+
+        res.json(updatedAccount);
     } catch (err) {
         console.error(err.message);
         res.status(500).send('Server Error');
@@ -294,10 +282,10 @@ router.get('/accounts/:accountId/users', auth(['admin']), async (req, res) => {
  * @access  Private (Admin only)
  */
 router.post('/accounts/:accountId/users', auth(['admin']), async (req, res) => {
-    const { firstName, lastName, email, role, password } = req.body;
+    const { firstName, lastName, email, password } = req.body;
     const { accountId } = req.params;
 
-    if (!firstName || !lastName || !email || !role || !password || !accountId) {
+    if (!firstName || !lastName || !email || !password || !accountId) {
         return res.status(400).json({ msg: 'Please enter all fields.' });
     }
 
@@ -316,7 +304,7 @@ router.post('/accounts/:accountId/users', auth(['admin']), async (req, res) => {
             lastName,
             email,
             password: hashedPassword,
-            role,
+            role: 'user',
         });
 
         const savedUser = await newUser.save();
@@ -333,9 +321,9 @@ router.post('/accounts/:accountId/users', auth(['admin']), async (req, res) => {
  * @access  Private (Admin only)
  */
 router.post('/accounts', auth(['admin']), async (req, res) => {
-    const { firstName, lastName, email, password, accountType } = req.body;
+    const { firstName, lastName, email, password, accountTypeId } = req.body;
 
-    if (!firstName || !lastName || !email || !password || !accountType) {
+    if (!firstName || !lastName || !email || !password || !accountTypeId) {
         return res.status(400).json({ msg: 'Please enter all fields.' });
     }
 
@@ -345,10 +333,10 @@ router.post('/accounts', auth(['admin']), async (req, res) => {
             return res.status(400).json({ msg: 'User with that email already exists.' });
         }
 
-        const salt = await bcrypt.genSalt(10);
+        const salt = await bcrypt.genGenSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
 
-        const newAccount = new Account({ accountType });
+        const newAccount = new Account({ accountType: accountTypeId });
         const savedAccount = await newAccount.save();
 
         const newUser = new User({
@@ -364,9 +352,144 @@ router.post('/accounts', auth(['admin']), async (req, res) => {
         savedAccount.primaryUser = savedUser.id;
         await savedAccount.save();
 
-        res.status(201).json({ msg: 'Account and primary user created successfully', user: savedUser, account: savedAccount });
+        const populatedAccount = await savedAccount.populate('accountType');
+        res.status(201).json({ msg: 'Account and primary user created successfully', user: savedUser, account: populatedAccount });
     } catch (err) {
         console.error('Admin account creation error:', err.message);
+        res.status(500).send('Server Error');
+    }
+});
+
+/**
+ * @route   GET /api/admin/settings
+ * @desc    Get site-wide settings
+ * @access  Private (Admin only)
+ */
+router.get('/settings', auth(['admin']), async (req, res) => {
+    try {
+        const settings = await Settings.findOne();
+        if (!settings) {
+            return res.status(404).json({ msg: 'Settings not found' });
+        }
+        res.json(settings);
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server Error');
+    }
+});
+
+/**
+ * @route   PUT /api/admin/settings
+ * @desc    Update site-wide settings
+ * @access  Private (Admin only)
+ */
+router.put('/settings', auth(['admin']), async (req, res) => {
+    const { siteName } = req.body;
+    const settingsFields = {};
+    if (siteName) settingsFields.siteName = siteName;
+
+    try {
+        let settings = await Settings.findOne();
+        if (!settings) {
+            return res.status(404).json({ msg: 'Settings not found' });
+        }
+
+        settings.siteName = settingsFields.siteName;
+        await settings.save();
+        
+        res.json(settings);
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server Error');
+    }
+});
+
+/**
+ * @route   POST /api/admin/settings/subscriptions
+ * @desc    Add a new subscription type
+ * @access  Private (Admin only)
+ */
+router.post('/settings/subscriptions', auth(['admin']), async (req, res) => {
+    const { name } = req.body;
+
+    if (!name) {
+        return res.status(400).json({ msg: 'Subscription type name is required.' });
+    }
+
+    try {
+        const settings = await Settings.findOne();
+        if (!settings) {
+            return res.status(404).json({ msg: 'Settings not found' });
+        }
+        
+        // Check if the subscription type already exists
+        const exists = settings.subscriptionTypes.some(sub => sub.name === name);
+        if (exists) {
+            return res.status(400).json({ msg: 'Subscription type already exists.' });
+        }
+
+        settings.subscriptionTypes.push({ name });
+        await settings.save();
+        
+        res.status(201).json(settings.subscriptionTypes);
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server Error');
+    }
+});
+
+/**
+ * @route   PUT /api/admin/settings/subscriptions/:id
+ * @desc    Update a subscription type
+ * @access  Private (Admin only)
+ */
+router.put('/settings/subscriptions/:id', auth(['admin']), async (req, res) => {
+    const { name } = req.body;
+
+    if (!name) {
+        return res.status(400).json({ msg: 'Subscription type name is required.' });
+    }
+
+    try {
+        const settings = await Settings.findOne();
+        if (!settings) {
+            return res.status(404).json({ msg: 'Settings not found' });
+        }
+        
+        const subscription = settings.subscriptionTypes.id(req.params.id);
+        if (!subscription) {
+            return res.status(404).json({ msg: 'Subscription type not found.' });
+        }
+        
+        subscription.name = name;
+        await settings.save();
+        
+        res.json(subscription);
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server Error');
+    }
+});
+
+/**
+ * @route   DELETE /api/admin/settings/subscriptions/:id
+ * @desc    Delete a subscription type
+ * @access  Private (Admin only)
+ */
+router.delete('/settings/subscriptions/:id', auth(['admin']), async (req, res) => {
+    try {
+        const settings = await Settings.findOne();
+        if (!settings) {
+            return res.status(404).json({ msg: 'Settings not found' });
+        }
+        
+        // Find and remove the subscription type by its ID
+        settings.subscriptionTypes.id(req.params.id).deleteOne();
+        await settings.save();
+
+        res.json({ msg: 'Subscription type deleted successfully' });
+    } catch (err) {
+        console.error(err.message);
         res.status(500).send('Server Error');
     }
 });

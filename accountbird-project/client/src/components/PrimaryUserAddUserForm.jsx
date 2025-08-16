@@ -9,7 +9,7 @@ const PrimaryUserAddUserForm = ({ onUserAdded, onBack, onLogout }) => {
         lastName: '',
         email: '',
         password: '',
-        role: 'subscriber',
+        role: 'user',
     });
     const [message, setMessage] = useState('');
     const [error, setError] = useState('');
@@ -62,13 +62,6 @@ const PrimaryUserAddUserForm = ({ onUserAdded, onBack, onLogout }) => {
                 <div className="form-group">
                     <label htmlFor="password">Password</label>
                     <input type="password" id="password" name="password" value={addUserData.password} onChange={handleAddUserChange} required />
-                </div>
-                <div className="form-group">
-                    <label htmlFor="role">User Role</label>
-                    <select id="role" name="role" value={addUserData.role} onChange={handleAddUserChange}>
-                        <option value="subscriber">Subscriber</option>
-                        <option value="contributor">Contributor</option>
-                    </select>
                 </div>
                 <button type="submit" className="submit-btn">Add User</button>
             </form>

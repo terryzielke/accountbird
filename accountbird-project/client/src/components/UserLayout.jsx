@@ -7,6 +7,7 @@ import Sidebar from './Sidebar';
 import UserDashboard from './UserDashboard';
 import UserProfile from './UserProfile';
 import PrimaryUserManageUsers from './PrimaryUserManageUsers';
+import PrimaryUserAccountSettingsLayout from './PrimaryUserAccountSettingsLayout';
 
 const UserLayout = ({ user, onLogout }) => {
     return (
@@ -21,6 +22,7 @@ const UserLayout = ({ user, onLogout }) => {
                             <Route path="/dashboard" element={<UserDashboard user={user} onLogout={onLogout} />} />
                             <Route path="/profile" element={<UserProfile user={user} onLogout={onLogout} />} />
                             <Route path="/users" element={<PrimaryUserManageUsers user={user} onLogout={onLogout} />} />
+                            <Route path="/settings/*" element={<PrimaryUserAccountSettingsLayout user={user} onLogout={onLogout} />} />
                             <Route path="*" element={<div>Page Not Found</div>} />
                         </Routes>
                     </div>

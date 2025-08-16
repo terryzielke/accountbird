@@ -2,8 +2,8 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import axios from 'axios';
-import AdminAccountSettings from './AdminAccountSettings';
-import AdminAccountUsers from './AdminAccountUsers';
+import AccountSettings from './AdminAccountSettings';
+import AccountUsers from './AdminAccountUsers';
 import './AdminAccountDetail.css';
 
 const AdminAccountDetail = ({ onLogout }) => {
@@ -11,7 +11,7 @@ const AdminAccountDetail = ({ onLogout }) => {
     const [account, setAccount] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
-    const [view, setView] = useState('users'); // State for secondary navigation
+    const [view, setView] = useState('users');
 
     const token = localStorage.getItem('token');
     const config = useMemo(() => ({
@@ -72,8 +72,8 @@ const AdminAccountDetail = ({ onLogout }) => {
             </div>
             
             <div className="account-detail-content">
-                {view === 'users' && <AdminAccountUsers accountId={accountId} onLogout={onLogout} />}
-                {view === 'settings' && <AdminAccountSettings accountId={accountId} account={account} onLogout={onLogout} />}
+                {view === 'users' && <AccountUsers accountId={accountId} onLogout={onLogout} />}
+                {view === 'settings' && <AccountSettings account={account} onLogout={onLogout} />}
             </div>
 
             <Link to="/admin/accounts" className="back-link">Back to Accounts</Link>

@@ -11,7 +11,7 @@ const UserSchema = new mongoose.Schema({
     // The user's role within their account
     role: {
         type: String,
-        enum: ['primary_user', 'contributor', 'subscriber'],
+        enum: ['primary_user', 'user'],
         default: 'primary_user',
         required: true,
     },
