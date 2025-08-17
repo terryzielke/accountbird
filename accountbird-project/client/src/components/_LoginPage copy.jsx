@@ -10,7 +10,7 @@ const LoginPage = ({ onLoginSuccess }) => {
     });
     const [message, setMessage] = useState('');
     const [error, setError] = useState('');
-    const navigate = useNavigate(); // CHANGE: Assign navigate to a variable
+    const navigate = useNavigate();
 
     const { email, password } = formData;
 
@@ -36,11 +36,7 @@ const LoginPage = ({ onLoginSuccess }) => {
             localStorage.setItem('token', response.data.token);
             localStorage.setItem('user', JSON.stringify(response.data.user));
             
-            const displayName = response.data.user.firstName || response.data.user.userName || response.data.user.email;
-            setMessage(`Welcome, ${displayName}! You are logged in.`);
-            
             onLoginSuccess(response.data.user);
-            navigate('/'); // CHANGE: Use navigate to redirect to the home page
 
         } catch (err) {
             setError(err.response?.data?.msg || 'An unexpected error occurred.');

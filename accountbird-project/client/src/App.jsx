@@ -45,7 +45,10 @@ function App() {
         localStorage.removeItem('token');
         localStorage.removeItem('user');
         setUser(null);
-        window.location.reload();
+    };
+
+    const handleLoginSuccess = (userData) => {
+        setUser(userData);
     };
 
     if (loading) {
@@ -67,7 +70,7 @@ function App() {
     return (
         <BrowserRouter>
             <Routes>
-                <Route path="/login" element={<LoginPage />} />
+                <Route path="/login" element={<LoginPage onLoginSuccess={handleLoginSuccess} />} />
                 <Route path="/register" element={<RegistrationForm />} />
                 <Route path="*" element={<Navigate to="/login" />} />
             </Routes>

@@ -1,5 +1,5 @@
 // client/src/components/UserProfile.jsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import axios from 'axios';
 import './UserProfile.css';
 
@@ -19,24 +19,21 @@ const UserProfile = ({ user, onLogout }) => {
     const [error, setError] = useState('');
 
     const token = localStorage.getItem('token');
-    const config = {
+    const config = useMemo(() => ({
         headers: {
             'Content-Type': 'application/json',
             'x-auth-token': token,
         },
-    };
+    }), [token]);
 
-    // Handler for profile form changes
     const handleProfileChange = (e) => {
         setProfileFormData({ ...profileFormData, [e.target.name]: e.target.value });
     };
 
-    // Handler for password form changes
     const handlePasswordChange = (e) => {
         setPasswordFormData({ ...passwordFormData, [e.target.name]: e.target.value });
     };
 
-    // Handle profile form submission
     const handleProfileSubmit = async (e) => {
         e.preventDefault();
         setMessage('');
@@ -45,14 +42,16 @@ const UserProfile = ({ user, onLogout }) => {
         try {
             const response = await axios.put('http://localhost:5001/api/profile', profileFormData, config);
             setUserData(response.data);
-            localStorage.setItem('user', JSON.stringify(response.data)); // Update local storage
+            localStorage.setItem('user', JSON.stringify(response.data));
             setMessage('Profile updated successfully!');
         } catch (err) {
             setError(err.response?.data?.msg || 'An unexpected error occurred.');
+            if (err.response?.status === 401 || err.response?.status === 403) {
+                onLogout();
+            }
         }
     };
 
-    // Handle password form submission
     const handlePasswordSubmit = async (e) => {
         e.preventDefault();
         setMessage('');
@@ -61,13 +60,15 @@ const UserProfile = ({ user, onLogout }) => {
         try {
             await axios.put('http://localhost:5001/api/profile/password', passwordFormData, config);
             setMessage('Password updated successfully!');
-            setPasswordFormData({ oldPassword: '', newPassword: '' }); // Clear the form
+            setPasswordFormData({ oldPassword: '', newPassword: '' });
         } catch (err) {
             setError(err.response?.data?.msg || 'An unexpected error occurred.');
+            if (err.response?.status === 401 || err.response?.status === 403) {
+                onLogout();
+            }
         }
     };
     
-    // Determine which fields to display based on user role
     const isRegularUser = userData.role !== 'admin';
 
     return (
