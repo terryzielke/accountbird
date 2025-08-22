@@ -3,7 +3,7 @@ import React, { useState, useMemo } from 'react';
 import axios from 'axios';
 import './UserDetail.css';
 
-const UserDetail = ({ user, onBack, onLogout }) => {
+const UserDetail = ({ user, onBack, onLogout, onUserDeleted }) => { // Change: Add onUserDeleted to the props
     const [userData, setUserData] = useState(user);
     const [formData, setFormData] = useState({
         firstName: user.firstName,
@@ -74,9 +74,27 @@ const UserDetail = ({ user, onBack, onLogout }) => {
         }
     };
 
+    const handleDeleteUser = async () => {
+        if (window.confirm(`Are you sure you want to delete ${userData.firstName} ${userData.lastName}?`)) {
+            try {
+                await axios.delete(`http://localhost:5001/api/admin/users/${userData._id}`, config);
+                onUserDeleted(); // Change: Call the new callback function
+            } catch (err) {
+                setError(err.response?.data?.msg || 'An error occurred while deleting the user.');
+                if (err.response?.status === 401 || err.response?.status === 403) {
+                    onLogout();
+                }
+            }
+        }
+    };
+
+    const isRegularUser = userData.role !== 'admin';
+
     return (
-        <div className="user-detail-container">
-            <h3>User Details for {userData.firstName} {userData.lastName}</h3>
+        <div className="section">
+            <header className="header">
+                <h2>User: {userData.firstName} {userData.lastName}</h2>
+            </header>
             {message && <div className="success-message">{message}</div>}
             {error && <div className="error-message">{error}</div>}
             <form onSubmit={handleUpdate}>
@@ -105,8 +123,7 @@ const UserDetail = ({ user, onBack, onLogout }) => {
                 </div>
                 <button type="submit" className="submit-btn">Update Password</button>
             </form>
-
-            <button onClick={onBack}>Back to Users</button>
+            <button onClick={handleDeleteUser} className="delete-btn">Delete User</button>
         </div>
     );
 };

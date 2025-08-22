@@ -72,17 +72,13 @@ const UserProfile = ({ user, onLogout }) => {
     const isRegularUser = userData.role !== 'admin';
 
     return (
-        <div className="profile-container">
-            <h2>User Profile</h2>
-            {message && <div className="success-message">{message}</div>}
+        <div className="content">
+            <header className="header">
+                <h2>{userData.role}: {profileFormData.firstName} {profileFormData.lastName}</h2>
+            </header>
+
             {error && <div className="error-message">{error}</div>}
-
-            <div className="profile-details">
-                <p><strong>Email:</strong> {userData.email}</p>
-                <p><strong>Role:</strong> {userData.role}</p>
-            </div>
-
-            <hr />
+            {message && <div className="success-message">{message}</div>}
 
             <h3>Update Profile Information</h3>
             <form onSubmit={handleProfileSubmit}>

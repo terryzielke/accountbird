@@ -92,8 +92,10 @@ const AdminAccountSettings = ({ account, onLogout }) => {
     }
     
     return (
-        <div className="account-settings-container">
-            <h4>Account Settings</h4>
+        <div className="section">
+            <header className='header'>
+                <h2>Account Settings</h2>
+            </header>
             {message && <div className="success-message">{message}</div>}
             {error && <div className="error-message">{error}</div>}
             <form onSubmit={handleUpdate}>
@@ -109,6 +111,7 @@ const AdminAccountSettings = ({ account, onLogout }) => {
                 </div>
                 <button type="submit" className="submit-btn">Update Settings</button>
             </form>
+            <hr />
             <button onClick={handleDeleteAccount} className="delete-btn">Delete Account</button>
         </div>
     );

@@ -5,13 +5,18 @@ import './AdminDashboard.css';
 
 const AdminDashboard = ({ onLogout }) => {
     return (
-        <div className="admin-dashboard-container">
-            <h2>Admin Dashboard</h2>
+        <div className="content">
+            <header className="header">
+                <h2>Admin Dashboard</h2>
+            </header>
             <p>Welcome to the admin control panel. Use the sidebar to manage users and accounts.</p>
-            <div className="dashboard-actions">
-                <Link to="/admin/accounts" className="secondary-btn">Manage Accounts</Link>
-                <Link to="/admin/users" className="secondary-btn">Manage Users</Link>
-            </div>
+            <nav className="admin-nav">
+                <ul>
+                    <li>
+                        <Link to="/admin/manage-users">Manage Users</Link>
+                    </li>
+                </ul>
+            </nav>
         </div>
     );
 };

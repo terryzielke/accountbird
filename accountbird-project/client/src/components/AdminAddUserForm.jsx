@@ -44,8 +44,10 @@ const AdminAddUserForm = ({ accountId, onUserAdded, onBack, onLogout }) => {
     };
 
     return (
-        <div className="add-user-form-container">
-            <h4>Add New User</h4>
+        <div className="section">
+            <header className='header'>
+                <h2>Add User</h2>
+            </header>
             {message && <div className="success-message">{message}</div>}
             {error && <div className="error-message">{error}</div>}
             <form onSubmit={handleAddUserSubmit}>
@@ -67,7 +69,6 @@ const AdminAddUserForm = ({ accountId, onUserAdded, onBack, onLogout }) => {
                 </div>
                 <button type="submit" className="submit-btn">Add User</button>
             </form>
-            <button onClick={onBack}>Back to Users</button>
         </div>
     );
 };

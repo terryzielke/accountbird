@@ -2,8 +2,8 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import axios from 'axios';
-import AccountSettings from './AdminAccountSettings';
-import AccountUsers from './AdminAccountUsers';
+import AdminAccountSettings from './AdminAccountSettings';
+import AdminAccountUsers from './AdminAccountUsers';
 import './AdminAccountDetail.css';
 
 const AdminAccountDetail = ({ onLogout }) => {
@@ -12,6 +12,7 @@ const AdminAccountDetail = ({ onLogout }) => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [view, setView] = useState('users');
+    const [usersView, setUsersView] = useState('list'); // New state for managing the internal view of the AccountUsers component
 
     const token = localStorage.getItem('token');
     const config = useMemo(() => ({
@@ -45,6 +46,11 @@ const AdminAccountDetail = ({ onLogout }) => {
         fetchAccountDetails();
     }, [token, onLogout, fetchAccountDetails]);
 
+    // This function will be passed down to the AdminAccountUsers component
+    const handleSetUsersView = (newView) => {
+        setUsersView(newView);
+    };
+
     if (loading) {
         return <div className="loading-container">Loading account details...</div>;
     }
@@ -58,25 +64,21 @@ const AdminAccountDetail = ({ onLogout }) => {
     }
 
     return (
-        <div className="account-detail-container">
-            <div className="account-detail-header">
-                <h3>Account Details for ID: {account._id}</h3>
-                <div className="secondary-nav">
-                    <button onClick={() => setView('users')} className={view === 'users' ? 'active' : ''}>
-                        Users
-                    </button>
-                    <button onClick={() => setView('settings')} className={view === 'settings' ? 'active' : ''}>
-                        Account Settings
-                    </button>
-                </div>
-            </div>
+        <div className="content account-content has-secondary-nav">
+            <nav className="secondary-nav">
+                <button onClick={() => { setView('users'); handleSetUsersView('list'); }} className={view === 'users' ? 'active' : ''}>
+                    Users
+                </button>
+                <button onClick={() => setView('settings')} className={view === 'settings' ? 'active' : ''}>
+                    Account Settings
+                </button>
+            </nav>
             
             <div className="account-detail-content">
-                {view === 'users' && <AccountUsers accountId={accountId} onLogout={onLogout} />}
-                {view === 'settings' && <AccountSettings account={account} onLogout={onLogout} />}
+                {view === 'users' && <AdminAccountUsers accountId={accountId} onLogout={onLogout} usersView={usersView} setUsersView={handleSetUsersView} />}
+                {view === 'settings' && <AdminAccountSettings account={account} onLogout={onLogout} />}
             </div>
 
-            <Link to="/admin/accounts" className="back-link">Back to Accounts</Link>
         </div>
     );
 };

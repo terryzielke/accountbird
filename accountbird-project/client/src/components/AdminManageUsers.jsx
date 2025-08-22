@@ -70,8 +70,10 @@ const AdminManageUsers = ({ onLogout }) => {
     }
 
     return (
-        <div className="manage-users-container">
-            <h3>All Users</h3>
+        <div className="content">
+            <header className="header">
+                <h3>All Users</h3>
+            </header>
             <ul>
                 {users.length > 0 ? (
                     users.map(user => (

@@ -2,15 +2,15 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import axios from 'axios';
 import UserDetail from './UserDetail';
-import AdminAddUserForm from './AdminAddUserForm'; // Import the new component
+import AddUserForm from './AdminAddUserForm';
 import './AdminAccountUsers.css';
 
-const AdminAccountUsers = ({ accountId, onLogout }) => {
+const AdminAccountUsers = ({ accountId, onLogout, usersView, setUsersView }) => {
     const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [message, setMessage] = useState('');
-    const [view, setView] = useState('list');
+    //const [view, setView] = useState('list');
     const [selectedUser, setSelectedUser] = useState(null);
 
     const token = localStorage.getItem('token');
@@ -46,32 +46,27 @@ const AdminAccountUsers = ({ accountId, onLogout }) => {
         fetchAccountUsers();
     }, [token, onLogout, fetchAccountUsers]);
 
-    const handleUserAdded = () => {
-        setMessage('User added successfully!');
-        setView('list');
+    const handleUserAdded = (msg) => {
+        setMessage(msg);
+        setUsersView('list');
         fetchAccountUsers();
-    };
-
-    const handleDeleteUser = async (userId) => {
-        if (window.confirm('Are you sure you want to delete this user?')) {
-            try {
-                await axios.delete(`http://localhost:5001/api/admin/users/${userId}`, config);
-                setMessage('User deleted successfully!');
-                fetchAccountUsers();
-            } catch (err) {
-                setError(err.response?.data?.msg || 'An error occurred while deleting the user.');
-            }
-        }
     };
 
     const handleEditClick = (user) => {
         setSelectedUser(user);
-        setView('detail');
+        setUsersView('detail');
     };
 
     const handleBackClick = () => {
         setSelectedUser(null);
-        setView('list');
+        setUsersView('list');
+    };
+    
+    // New function to handle deletion from the child component
+    const handleUserDeleted = () => {
+        setMessage('User deleted successfully!');
+        setUsersView('list');
+        fetchAccountUsers();
     };
 
     if (loading) {
@@ -82,37 +77,50 @@ const AdminAccountUsers = ({ accountId, onLogout }) => {
         return <div className="error-message">{error}</div>;
     }
 
-    if (view === 'detail') {
-        return <UserDetail user={selectedUser} onBack={handleBackClick} onLogout={onLogout} />;
+    if (usersView === 'detail') {
+        return <UserDetail user={selectedUser} onBack={handleBackClick} onLogout={onLogout} onUserDeleted={handleUserDeleted} />;
     }
 
-    if (view === 'add') {
-        return <AdminAddUserForm accountId={accountId} onUserAdded={handleUserAdded} onBack={handleBackClick} onLogout={onLogout} />;
+    if (usersView === 'add') {
+        return <AddUserForm accountId={accountId} onUserAdded={handleUserAdded} onBack={handleBackClick} onLogout={onLogout} />;
     }
 
     return (
-        <div className="account-users-container">
-            <h4>Users in this Account</h4>
+        <div className="section account-users">
+            <header className="header">
+                <h2>{users.find(user => user.role === 'primary_user')?.firstName + ' ' + users.find(user => user.role === 'primary_user')?.lastName || 'None'}: Users</h2>
+                <button onClick={() => setUsersView('add')} className="secondary-btn">Add New User</button>
+            </header>
+
+            {message && <div className="success-message">{message}</div>}
+            {error && <div className="error-message">{error}</div>}
+            
             <div className="user-list">
-                {message && <div className="success-message">{message}</div>}
-                {error && <div className="error-message">{error}</div>}
-                <ul>
+                <table>
+                    <tr>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Role</th>
+                        <th>Actions</th>
+                    </tr>
                     {users.length > 0 ? (
                         users.map(user => (
-                            <li key={user._id}>
-                                <strong>Name:</strong> {user.firstName} {user.lastName}<br />
-                                <strong>Email:</strong> {user.email}<br />
-                                <strong>Role:</strong> {user.role}<br />
-                                <button onClick={() => handleEditClick(user)}>Edit</button>
-                                <button onClick={() => handleDeleteUser(user._id)}>Delete</button>
-                            </li>
+                            <tr key={user._id}>
+                                <td>{user.firstName} {user.lastName}</td>
+                                <td>{user.email}</td>
+                                <td>{user.role}</td>
+                                <td>
+                                    <button onClick={() => handleEditClick(user)}>Edit</button>
+                                </td>
+                            </tr>
                         ))
                     ) : (
-                        <p>No users found for this account.</p>
+                        <tr>
+                            <td colSpan="4">No users found for this account.</td>
+                        </tr>
                     )}
-                </ul>
+                </table>
             </div>
-            <button onClick={() => setView('add')} className="secondary-btn">Add New User</button>
         </div>
     );
 };

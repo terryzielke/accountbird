@@ -1,0 +1,61 @@
+.user-list table{
+    width: 100%;
+    border-collapse: collapse;
+    border-spacing: 0;
+}
+
+.user-list table tbody {
+    width: 100%;
+}
+
+.user-list table tr {
+    width: 100%;
+    border-bottom: 2px solid white;
+}
+
+.user-list table tr th {
+    padding: 10px;
+    color: #505050;
+    text-align: left;
+}
+
+.user-list table tr th:last-child {
+    text-align: right;
+}
+
+.user-list table tr td {
+    padding: 10px;
+    background-color: #F0F0F0;
+    color: #505050;
+    text-align: left;
+}
+
+.user-list table tr td:last-child {
+    text-align: right;
+    padding: 0;
+}
+
+.user-list table tr td:last-child button {
+    padding: 10px 20px;
+    background-color: #3CCF73;
+    color: white;
+    font-size: 16px;
+    font-weight: bold;
+    border: none;
+    border-left: 2px solid white;
+    border-radius: 0;
+    cursor: pointer;
+    transition: background 0.3s ease;
+}
+
+.user-list table tr td:last-child button:hover {
+    background-color: #36b66a;
+}
+
+.user-list table tr td:last-child button.delete-btn {
+    background-color: #FF4E4E;
+}
+
+.user-list table tr td:last-child button.delete-btn:hover {
+    background-color: #E04343;
+}

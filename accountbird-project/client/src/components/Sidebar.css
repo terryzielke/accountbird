@@ -1,9 +1,9 @@
 /* client/src/components/Sidebar.css */
 .sidebar {
     width: 250px;
-    background-color: #495057;
-    color: #fff;
-    padding-top: 1rem;
+    background-color: #303030;
+    color: white;
+    padding-top: 40px;
 }
 
 .sidebar nav ul {
@@ -13,28 +13,51 @@
 }
 
 .sidebar nav li {
-    padding: 1rem 2rem;
+    padding: 0;
+    margin: 0;
 }
 
-.sidebar nav li a {
-    color: #fff;
+.sidebar nav li a,
+.sidebar nav li:last-child div {
+    color: white;
     text-decoration: none;
+    text-transform: uppercase;
     display: block;
-    font-size: 1.1rem;
+    font-size: 16px;
+    padding: 10px 20px;
     transition: background-color 0.3s ease;
+    cursor: pointer;
 }
 
-.sidebar nav li a:hover {
-    background-color: #6c757d;
+.sidebar nav li:not(:last-child){
+    border-bottom: 1px solid #404040;
+}
+
+.sidebar nav li a:hover,
+.sidebar nav li:last-child div:hover {
+    background-color: #404040;
 }
 
 /* Active class styles */
 .sidebar nav li a.active,
 .sidebar nav li.active-parent > div {
-    background-color: #6c757d; /* Highlight for active link or parent */
-    color: #fff;
+    background-color: #FFD644 !important;
+    color: #303030 !important;
+}
+.sidebar nav li > div:has(+ .submenu) {
+    background-color: #404040;
 }
 
-.sidebar nav .submenu {
-    padding-left: 1rem; /* Indent for submenu */
+.sidebar nav li ul.submenu{
+    padding: 10px 0;
+}
+.sidebar nav li ul.submenu li{
+    border-bottom: none !important;
+}
+.sidebar nav li ul.submenu li a:hover{
+    background-color: transparent !important;
+}
+.sidebar nav li ul.submenu li a.active{
+    background-color: transparent !important;
+    color: #FFD644 !important;
 }

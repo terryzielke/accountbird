@@ -1,6 +1,7 @@
 // client/src/components/PrimaryUserSubscriptionType.jsx
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import axios from 'axios';
+import iconDown from '../assets/icons/down.svg';
 import './PrimaryUserSubscriptionType.css';
 
 const PrimaryUserSubscriptionType = ({ user, onLogout }) => {
@@ -79,14 +80,16 @@ const PrimaryUserSubscriptionType = ({ user, onLogout }) => {
     }
 
     return (
-        <div className="user-subscription-container">
-            <h3>Subscription Type</h3>
+        <div className="content">
+            <header className="header">
+                <h2>Subscription Type</h2>
+            </header>
             {message && <div className="success-message">{message}</div>}
             {error && <div className="error-message">{error}</div>}
             <form onSubmit={handleSubmit}>
                 <div className="form-group">
-                    <label htmlFor="accountType">Account Type</label>
-                    <select id="accountType" name="accountType" value={formData.accountType} onChange={handleChange}>
+                    <label htmlFor="accountType">Select Subscription Type</label>
+                    <select id="accountType" name="accountType" value={formData.accountType} onChange={handleChange} style={{ backgroundImage: `url(${iconDown})` }}>
                         {subscriptionTypes.map(sub => (
                             <option key={sub._id} value={sub._id}>
                                 {sub.name}

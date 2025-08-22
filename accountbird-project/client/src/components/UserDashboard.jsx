@@ -7,10 +7,11 @@ const UserDashboard = ({ user, onLogout }) => {
     const displayName = user.firstName || user.userName || user.email;
 
     return (
-        <div className="dashboard-container">
-            <h2>Welcome to your Dashboard, {displayName}!</h2>
-            <p><strong>Email:</strong> {user.email}</p>
-            <p><strong>Role:</strong> {user.role}</p>
+        <div className="content">
+            <header className="header">
+                <h2>Welcome to your Dashboard, {displayName}!</h2>
+            </header>
+            
             {user.role === 'primary_user' && (
                 <Link to="/users" className="secondary-btn">Manage Users</Link>
             )}

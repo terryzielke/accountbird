@@ -91,28 +91,42 @@ const PrimaryUserManageUsers = ({ user, onLogout }) => {
     }
 
     return (
-        <div className="manage-users-container">
-            <h4>Users in Your Account</h4>
+        <div className="content">
+            <header className="header">
+                <h2>Manage Users</h2>
+                <button onClick={() => setView('add')} className="secondary-btn">Add New User</button>
+            </header>
+            
             {message && <div className="success-message">{message}</div>}
             {error && <div className="error-message">{error}</div>}
+
             <div className="user-list">
-                <ul>
+                <table>
+                    <tr>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Role</th>
+                        <th>Actions</th>
+                    </tr>
                     {users.length > 0 ? (
                         users.map(u => (
-                            <li key={u._id}>
-                                <strong>Name:</strong> {u.firstName} {u.lastName}<br />
-                                <strong>Email:</strong> {u.email}<br />
-                                <strong>Role:</strong> {u.role}<br />
-                                <button onClick={() => handleEditClick(u)}>Edit</button>
-                                <button onClick={() => handleDeleteUser(u._id)}>Delete</button>
-                            </li>
+                            <tr key={u._id}>
+                                <td>{u.firstName} {u.lastName}</td>
+                                <td>{u.email}</td>
+                                <td>{u.role}</td>
+                                <td>
+                                    <button className='edit-btn' onClick={() => handleEditClick(u)}>Edit</button>
+                                    <button className='delete-btn' onClick={() => handleDeleteUser(u._id)}>Delete</button>
+                                </td>
+                            </tr>
                         ))
                     ) : (
-                        <p>No users found for this account.</p>
+                        <tr>
+                            <td colSpan="4">No users found for this account.</td>
+                        </tr>
                     )}
-                </ul>
+                </table>
             </div>
-            <button onClick={() => setView('add')} className="secondary-btn">Add New User</button>
         </div>
     );
 };

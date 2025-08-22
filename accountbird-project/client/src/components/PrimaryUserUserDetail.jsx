@@ -75,10 +75,14 @@ const PrimaryUserUserDetail = ({ user, onBack, onLogout }) => {
     };
 
     return (
-        <div className="user-detail-container">
-            <h3>User Details for {userData.firstName} {userData.lastName}</h3>
+        <div className="content">
+            <header className="header">
+                <h2>User Details for {userData.firstName} {userData.lastName}</h2>
+            </header>
+
             {message && <div className="success-message">{message}</div>}
             {error && <div className="error-message">{error}</div>}
+            
             <form onSubmit={handleUpdate}>
                 <div className="form-group">
                     <label htmlFor="firstName">First Name</label>

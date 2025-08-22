@@ -62,24 +62,38 @@ const AdminManageAccounts = ({ onLogout }) => {
     }
 
     return (
-        <div className="manage-accounts-container">
-            <h3>All Accounts</h3>
-            <button onClick={() => setView('add')} className="secondary-btn">Create New Account</button>
-            <ul>
-                {accounts.length > 0 ? (
-                    accounts.map(account => (
-                        <li key={account._id}>
-                            <Link to={`/admin/accounts/${account._id}`}>
-                                <strong>ID:</strong> {account._id}<br />
-                                <strong>Type:</strong> {account.accountType}<br />
-                                <strong>Primary User:</strong> {account.primaryUser?.firstName || 'N/A'} {account.primaryUser?.lastName || ''}
-                            </Link>
-                        </li>
-                    ))
-                ) : (
-                    <p>No accounts found.</p>
-                )}
-            </ul>
+        <div className="content">
+            <header className="header">
+                <h2>Manage Accounts</h2>
+                <button onClick={() => setView('add')} className="secondary-btn">Create New Account</button>
+            </header>
+
+            <div className="accounts-list">
+                <table>
+                    <tr>
+                        <th>Primary User</th>
+                        <th>Type</th>
+                        <th>ID</th>
+                        <th>Actions</th>
+                    </tr>
+                    {accounts.length > 0 ? (
+                        accounts.map(account => (
+                            <tr key={account._id}>
+                                <td>{account.primaryUser?.firstName || 'N/A'} {account.primaryUser?.lastName || ''}</td>
+                                <td>{account.accountType}</td>
+                                <td>{account._id}</td>
+                                <td>
+                                    <Link to={`/admin/accounts/${account._id}`} className="edit-btn">Manage</Link>
+                                </td>
+                            </tr>
+                        ))
+                    ) : (
+                        <tr>
+                            <td colSpan="3">No accounts found.</td>
+                        </tr>
+                    )}
+                </table>
+            </div>
         </div>
     );
 };
