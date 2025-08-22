@@ -36,9 +36,25 @@ const EditSubscriptionType = ({ subscription, onTypeUpdated, onBack, onLogout })
         }
     };
 
+    const handleDelete = async () => {
+        if (window.confirm('Are you sure you want to delete this subscription type?')) {
+            try {
+                await axios.delete(`http://localhost:5001/api/admin/settings/subscriptions/${subscription._id}`, config);
+                onTypeUpdated('Subscription type deleted successfully!');
+            } catch (err) {
+                setError(err.response?.data?.msg || 'An error occurred while deleting the subscription type.');
+                if (err.response?.status === 401 || err.response?.status === 403) {
+                    onLogout();
+                }
+            }
+        }
+    };
+
     return (
-        <div className="edit-subscription-container">
-            <h4>Edit Subscription Type</h4>
+        <div className="content">
+            <header className="header">
+                <h2>Edit Subscription Type</h2>
+            </header>
             {message && <div className="success-message">{message}</div>}
             {error && <div className="error-message">{error}</div>}
             <form onSubmit={handleUpdate}>
@@ -48,7 +64,8 @@ const EditSubscriptionType = ({ subscription, onTypeUpdated, onBack, onLogout })
                 </div>
                 <button type="submit" className="submit-btn">Update Subscription</button>
             </form>
-            <button onClick={onBack}>Back to List</button>
+            <hr />
+            <button onClick={handleDelete} className="delete-btn">Delete Subscription</button>
         </div>
     );
 };

@@ -1,5 +1,6 @@
 // client/src/components/SubscriptionTypes.jsx
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { useLocation } from 'react-router-dom';
 import axios from 'axios';
 import AddSubscriptionType from './AddSubscriptionType';
 import EditSubscriptionType from './EditSubscriptionType';
@@ -12,6 +13,7 @@ const SubscriptionTypes = ({ onLogout }) => {
     const [message, setMessage] = useState('');
     const [view, setView] = useState('list');
     const [selectedSub, setSelectedSub] = useState(null);
+    const location = useLocation();
 
     const token = localStorage.getItem('token');
     const config = useMemo(() => ({
@@ -43,8 +45,14 @@ const SubscriptionTypes = ({ onLogout }) => {
             onLogout();
             return;
         }
+        
+        // Check if we are coming from a navigation state that wants to reset the view
+        if (location.state?.view) {
+            setView(location.state.view);
+        }
+
         fetchSubscriptionTypes();
-    }, [token, onLogout, fetchSubscriptionTypes]);
+    }, [token, onLogout, fetchSubscriptionTypes, location.state]);
 
     const handleTypeUpdated = (msg) => {
         setMessage(msg);
@@ -52,32 +60,9 @@ const SubscriptionTypes = ({ onLogout }) => {
         fetchSubscriptionTypes();
     };
 
-    const handleDelete = async (subId) => {
-        if (window.confirm('Are you sure you want to delete this subscription type?')) {
-            setMessage('');
-            setError('');
-            try {
-                await axios.delete(`http://localhost:5001/api/admin/settings/subscriptions/${subId}`, config);
-                setMessage('Subscription type deleted successfully!');
-                fetchSubscriptionTypes();
-            } catch (err) {
-                setError(err.response?.data?.msg || 'An error occurred while deleting the subscription type.');
-                if (err.response?.status === 401 || err.response?.status === 403) {
-                    onLogout();
-                }
-            }
-        }
-    };
-
     const handleEditClick = (sub) => {
         setSelectedSub(sub);
         setView('edit');
-    };
-
-    const handleBackClick = () => {
-        setSelectedSub(null);
-        setView('list');
-        fetchSubscriptionTypes();
     };
 
     if (loading) {
@@ -89,34 +74,39 @@ const SubscriptionTypes = ({ onLogout }) => {
     }
     
     if (view === 'add') {
-        return <AddSubscriptionType onTypeAdded={handleTypeUpdated} onBack={handleBackClick} onLogout={onLogout} />;
+        return <AddSubscriptionType onTypeAdded={handleTypeUpdated} onBack={() => setView('list')} onLogout={onLogout} />;
     }
 
     if (view === 'edit') {
-        return <EditSubscriptionType subscription={selectedSub} onTypeUpdated={handleTypeUpdated} onBack={handleBackClick} onLogout={onLogout} />;
+        return <EditSubscriptionType subscription={selectedSub} onTypeUpdated={handleTypeUpdated} onBack={() => setView('list')} onLogout={onLogout} />;
     }
 
     return (
-        <div className="settings-page">
-            <h3>Subscription Types</h3>
+        <div className="content">
+            <header className="header">
+                <h2>Subscription Types</h2>
+                <button onClick={() => setView('add')} className='secondary-btn'>Add New Subscription</button>
+            </header>
             {message && <div className="success-message">{message}</div>}
             {error && <div className="error-message">{error}</div>}
             <div className="subscription-list">
-                <ul>
-                    {subscriptionTypes.length > 0 ? (
-                        subscriptionTypes.map(sub => (
-                            <li key={sub._id}>
-                                {sub.name}
-                                <button onClick={() => handleEditClick(sub)}>Edit</button>
-                                <button onClick={() => handleDelete(sub._id)}>Delete</button>
-                            </li>
-                        ))
-                    ) : (
-                        <p>No subscription types found.</p>
-                    )}
-                </ul>
+                <table>
+                    <tr>
+                        <th>Name</th>
+                        <th>Price</th>
+                        <th>Actions</th>
+                    </tr>
+                    {subscriptionTypes.map(sub => (
+                        <tr key={sub._id}>
+                            <td>{sub.name}</td>
+                            <td></td>
+                            <td>
+                                <button onClick={() => handleEditClick(sub)} className='edit-btn'>Edit</button>
+                            </td>
+                        </tr>
+                    ))}
+                </table>
             </div>
-            <button onClick={() => setView('add')}>Add New Subscription</button>
         </div>
     );
 };

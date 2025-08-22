@@ -33,8 +33,10 @@ const AddSubscriptionType = ({ onTypeAdded, onBack, onLogout }) => {
     };
 
     return (
-        <div className="add-subscription-container">
-            <h4>Add New Subscription Type</h4>
+        <div className="content">
+            <header className="header">
+                <h2>Add Subscription Type</h2>
+            </header>
             {message && <div className="success-message">{message}</div>}
             {error && <div className="error-message">{error}</div>}
             <form onSubmit={handleAddSubmit}>
@@ -44,7 +46,6 @@ const AddSubscriptionType = ({ onTypeAdded, onBack, onLogout }) => {
                 </div>
                 <button type="submit" className="submit-btn">Add Subscription</button>
             </form>
-            <button onClick={onBack}>Back to List</button>
         </div>
     );
 };

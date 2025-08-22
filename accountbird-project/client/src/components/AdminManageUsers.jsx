@@ -39,28 +39,7 @@ const AdminManageUsers = ({ onLogout }) => {
         }
         fetchUsers();
     }, [token, onLogout, fetchUsers]);
-/*
-    const handleUpdateUserRole = async (userId, newRole) => {
-        try {
-            const body = { role: newRole };
-            await axios.put(`http://localhost:5001/api/admin/user/${userId}`, body, config);
-            fetchUsers();
-        } catch (err) {
-            setError(err.response?.data?.msg || 'An error occurred while updating the user role.');
-        }
-    };
 
-    const handleDeleteUser = async (userId) => {
-        if (window.confirm('Are you sure you want to delete this user?')) {
-            try {
-                await axios.delete(`http://localhost:5001/api/admin/user/${userId}`, config);
-                fetchUsers();
-            } catch (err) {
-                setError(err.response?.data?.msg || 'An error occurred while deleting the user.');
-            }
-        }
-    };
-*/
     if (loading) {
         return <div className="loading-container">Loading users...</div>;
     }

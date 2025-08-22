@@ -68,8 +68,10 @@ const GeneralSettings = ({ onLogout }) => {
     }
 
     return (
-        <div className="settings-page">
-            <h3>General Settings</h3>
+        <div className="content">
+            <header className="header">
+                <h2>General Settings</h2>
+            </header>
             {message && <div className="success-message">{message}</div>}
             {error && <div className="error-message">{error}</div>}
             <form onSubmit={handleSubmit}>

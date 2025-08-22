@@ -74,6 +74,21 @@ const PrimaryUserUserDetail = ({ user, onBack, onLogout }) => {
         }
     };
 
+    const handleDeleteUser = async () => {
+        if (window.confirm(`Are you sure you want to delete ${userData.firstName} ${userData.lastName}?`)) {
+            try {
+                await axios.delete(`http://localhost:5001/api/account/users/${userData._id}`, config);
+                setMessage('User deleted successfully!');
+                onBack();
+            } catch (err) {
+                setError(err.response?.data?.msg || 'An error occurred while deleting the user.');
+                if (err.response?.status === 401 || err.response?.status === 403) {
+                    onLogout();
+                }
+            }
+        }
+    };
+
     return (
         <div className="content">
             <header className="header">
@@ -109,8 +124,8 @@ const PrimaryUserUserDetail = ({ user, onBack, onLogout }) => {
                 </div>
                 <button type="submit" className="submit-btn">Update Password</button>
             </form>
-
-            <button onClick={onBack}>Back to Users</button>
+            <hr />
+            <button onClick={handleDeleteUser} className="delete-btn">Delete User</button>
         </div>
     );
 };

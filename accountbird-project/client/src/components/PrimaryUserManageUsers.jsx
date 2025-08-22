@@ -1,5 +1,6 @@
 // client/src/components/PrimaryUserManageUsers.jsx
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { useLocation } from 'react-router-dom';
 import axios from 'axios';
 import PrimaryUserAddUserForm from './PrimaryUserAddUserForm';
 import PrimaryUserUserDetail from './PrimaryUserUserDetail';
@@ -12,6 +13,7 @@ const PrimaryUserManageUsers = ({ user, onLogout }) => {
     const [message, setMessage] = useState('');
     const [view, setView] = useState('list');
     const [selectedUser, setSelectedUser] = useState(null);
+    const location = useLocation();
 
     const token = localStorage.getItem('token');
     const config = useMemo(() => ({
@@ -42,8 +44,12 @@ const PrimaryUserManageUsers = ({ user, onLogout }) => {
             onLogout();
             return;
         }
+        if (location.state?.view) {
+            setView(location.state.view);
+        }
+
         fetchUsers();
-    }, [token, onLogout, fetchUsers]);
+    }, [token, onLogout, fetchUsers, location.state]);
 
     const handleUserAdded = (msg) => {
         setMessage(msg);
@@ -51,25 +57,13 @@ const PrimaryUserManageUsers = ({ user, onLogout }) => {
         fetchUsers();
     };
 
-    const handleDeleteUser = async (userId) => {
-        if (window.confirm('Are you sure you want to delete this user?')) {
-            try {
-                await axios.delete(`http://localhost:5001/api/account/users/${userId}`, config);
-                setMessage('User deleted successfully!');
-                fetchUsers();
-            } catch (err) {
-                setError(err.response?.data?.msg || 'An error occurred while deleting the user.');
-            }
-        }
-    };
-
     const handleEditClick = (u) => {
         setSelectedUser(u);
         setView('detail');
     };
 
-    const handleBackClick = () => {
-        setSelectedUser(null);
+    const handleUserDeleted = () => {
+        setMessage('User deleted successfully!');
         setView('list');
         fetchUsers();
     };
@@ -83,11 +77,11 @@ const PrimaryUserManageUsers = ({ user, onLogout }) => {
     }
 
     if (view === 'detail') {
-        return <PrimaryUserUserDetail user={selectedUser} onBack={handleBackClick} onLogout={onLogout} />;
+        return <PrimaryUserUserDetail user={selectedUser} onBack={handleUserDeleted} onLogout={onLogout} />;
     }
 
     if (view === 'add') {
-        return <PrimaryUserAddUserForm onUserAdded={handleUserAdded} onBack={handleBackClick} onLogout={onLogout} />;
+        return <PrimaryUserAddUserForm onUserAdded={handleUserAdded} onBack={() => setView('list')} onLogout={onLogout} />;
     }
 
     return (
@@ -116,7 +110,6 @@ const PrimaryUserManageUsers = ({ user, onLogout }) => {
                                 <td>{u.role}</td>
                                 <td>
                                     <button className='edit-btn' onClick={() => handleEditClick(u)}>Edit</button>
-                                    <button className='delete-btn' onClick={() => handleDeleteUser(u._id)}>Delete</button>
                                 </td>
                             </tr>
                         ))

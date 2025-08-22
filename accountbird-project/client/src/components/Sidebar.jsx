@@ -50,7 +50,7 @@ const Sidebar = ({ userRole }) => {
                                             <NavLink to="/admin/settings/general">General Settings</NavLink>
                                         </li>
                                         <li>
-                                            <NavLink to="/admin/settings/subscription">Subscription Types</NavLink>
+                                            <NavLink to="/admin/settings/subscription" state={{ view: 'list' }}>Subscription Types</NavLink>
                                         </li>
                                         <li>
                                             <NavLink to="/admin/settings/billing">Billing & Payments</NavLink>
@@ -69,7 +69,7 @@ const Sidebar = ({ userRole }) => {
                             </li>
                             {userRole === 'primary_user' && (
                                 <li>
-                                    <NavLink to="/users">Users</NavLink>
+                                    <NavLink to="/users" state={{ view: 'list' }}>Users</NavLink>
                                 </li>
                             )}
                             {userRole === 'primary_user' && (

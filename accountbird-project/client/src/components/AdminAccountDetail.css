@@ -2,5 +2,6 @@
 @media (min-width: 1200px) {
     .content-area .content.account-content.has-secondary-nav nav.secondary-nav {
         padding-top: 116px; /* Adjusted for nav height */
+        height: calc(100% - 116px); /* Full height minus nav height */
     }
 }
