@@ -53,6 +53,9 @@ const Sidebar = ({ userRole }) => {
                                             <NavLink to="/admin/settings/subscription" state={{ view: 'list' }}>Subscription Types</NavLink>
                                         </li>
                                         <li>
+                                            <NavLink to="/admin/settings/email">Email Settings</NavLink>
+                                        </li>
+                                        <li>
                                             <NavLink to="/admin/settings/billing">Billing & Payments</NavLink>
                                         </li>
                                     </ul>
@@ -77,6 +80,9 @@ const Sidebar = ({ userRole }) => {
                                     <div onClick={() => toggleSubmenu('settings')}>Settings</div>
                                     {openSubmenu === 'settings' && (
                                         <ul className="submenu">
+                                            <li>
+                                                <NavLink to="/settings/general">General Settings</NavLink>
+                                            </li>
                                             <li>
                                                 <NavLink to="/settings/subscription">Subscription Type</NavLink>
                                             </li>

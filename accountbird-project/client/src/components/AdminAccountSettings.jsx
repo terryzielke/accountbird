@@ -8,14 +8,16 @@ const AdminAccountSettings = ({ account, onLogout }) => {
     const [subscriptionTypes, setSubscriptionTypes] = useState([]);
     const [formData, setFormData] = useState({
         accountType: account.accountType ? account.accountType._id : '',
+        status: account.status || 'Active',
     });
     const [loading, setLoading] = useState(true);
     const [message, setMessage] = useState('');
     const [error, setError] = useState('');
 
     const navigate = useNavigate();
-
     const token = localStorage.getItem('token');
+
+    // UseMemo for stable headers to prevent unnecessary re-renders
     const config = useMemo(() => ({
         headers: {
             'Content-Type': 'application/json',
@@ -23,6 +25,7 @@ const AdminAccountSettings = ({ account, onLogout }) => {
         },
     }), [token]);
 
+    // Fetch subscription types and initial account data
     const fetchSubscriptionTypes = useCallback(async () => {
         try {
             const response = await axios.get('http://localhost:5001/api/admin/settings', config);
@@ -37,19 +40,24 @@ const AdminAccountSettings = ({ account, onLogout }) => {
         }
     }, [onLogout, config]);
 
-    useEffect(() => {
-        fetchSubscriptionTypes();
-    }, [fetchSubscriptionTypes]);
-
+    // Use a separate effect to set form data after initial fetches
     useEffect(() => {
         if (accountData && subscriptionTypes.length > 0) {
             const currentSub = subscriptionTypes.find(sub => String(sub._id) === String(accountData.accountType._id));
             if (currentSub) {
-                setFormData({ accountType: currentSub._id });
+                setFormData(prevFormData => ({
+                    ...prevFormData,
+                    accountType: currentSub._id,
+                    status: accountData.status, // Ensure status is correctly set
+                }));
             }
         }
     }, [accountData, subscriptionTypes]);
-
+    
+    // Initial data fetch on component mount
+    useEffect(() => {
+        fetchSubscriptionTypes();
+    }, [fetchSubscriptionTypes]);
 
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -66,6 +74,25 @@ const AdminAccountSettings = ({ account, onLogout }) => {
             setMessage('Account settings updated successfully!');
         } catch (err) {
             setError(err.response?.data?.msg || 'An error occurred while updating settings.');
+            if (err.response?.status === 401 || err.response?.status === 403) {
+                onLogout();
+            }
+        }
+    };
+    
+    const handleStatusUpdate = async (e) => {
+        e.preventDefault();
+        setMessage('');
+        setError('');
+        try {
+            const body = { status: formData.status };
+            const response = await axios.put(`http://localhost:5000/api/admin/accounts/${accountData._id}/status`, body, config);
+            
+            // Update the local state with the new status
+            setAccountData(prevData => ({ ...prevData, status: formData.status }));
+            setMessage(response.data.msg);
+        } catch (err) {
+            setError(err.response?.data?.msg || 'An error occurred while updating the status.');
             if (err.response?.status === 401 || err.response?.status === 403) {
                 onLogout();
             }
@@ -110,6 +137,17 @@ const AdminAccountSettings = ({ account, onLogout }) => {
                     </select>
                 </div>
                 <button type="submit" className="submit-btn">Update Settings</button>
+            </form>
+            <hr />
+            <form onSubmit={handleStatusUpdate}>
+                <div className="form-group">
+                    <label htmlFor="status">Account Status</label>
+                    <select id="status" name="status" value={formData.status} onChange={handleChange}>
+                        <option value="Active">Active</option>
+                        <option value="Deactivated">Deactivated</option>
+                    </select>
+                </div>
+                <button type="submit" className="submit-btn">Update Status</button>
             </form>
             <hr />
             <button onClick={handleDeleteAccount} className="delete-btn">Delete Account</button>

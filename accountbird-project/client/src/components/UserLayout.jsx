@@ -10,6 +10,7 @@ import PrimaryUserManageUsers from './PrimaryUserManageUsers';
 //import PrimaryUserAccountSettingsLayout from './PrimaryUserAccountSettingsLayout';
 
 // Settings components
+import PrimaryUserGeneralSettings from './PrimaryUserGeneralSettings';
 import PrimaryUserSubscriptionType from './PrimaryUserSubscriptionType';
 import PrimaryUserBillingAndPayments from './PrimaryUserBillingAndPayments';
 
@@ -27,6 +28,7 @@ const UserLayout = ({ user, onLogout }) => {
                             <Route path="/profile" element={<UserProfile user={user} onLogout={onLogout} />} />
                             <Route path="/users" element={<PrimaryUserManageUsers user={user} onLogout={onLogout} />} />
                             {/*<Route path="/settings/*" element={<PrimaryUserAccountSettingsLayout user={user} onLogout={onLogout} />} />*/}
+                            <Route path="/settings/general" element={<PrimaryUserGeneralSettings user={user} onLogout={onLogout} />} />
                             <Route path="/settings/subscription" element={<PrimaryUserSubscriptionType user={user} onLogout={onLogout} />} />
                             <Route path="/settings/billing" element={<PrimaryUserBillingAndPayments user={user} onLogout={onLogout} />} />
                             <Route path="*" element={<div>Page Not Found</div>} />

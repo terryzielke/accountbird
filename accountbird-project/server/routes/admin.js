@@ -12,6 +12,38 @@ const Account = require('../models/Account');
 const Settings = require('../models/Settings');
 
 /**
+ * @route   PUT /api/admin/settings/email
+ * @desc    Update SMTP and email template settings
+ * @access  Private (Admin only)
+ */
+router.put('/settings/email', auth(['admin']), async (req, res) => {
+    const { emailHost, emailPort, emailUser, emailPass, registrationEmailHtml } = req.body;
+
+    try {
+        let settings = await Settings.findOne();
+        if (!settings) {
+            return res.status(404).json({ msg: 'Settings not found.' });
+        }
+
+        // Update SMTP settings
+        settings.emailSettings.host = emailHost || settings.emailSettings.host;
+        settings.emailSettings.port = emailPort || settings.emailSettings.port;
+        settings.emailSettings.user = emailUser || settings.emailSettings.user;
+        settings.emailSettings.pass = emailPass || settings.emailSettings.pass;
+
+        // Update email templates
+        settings.emailTemplates.registrationEmail = registrationEmailHtml || settings.emailTemplates.registrationEmail;
+
+        await settings.save();
+        res.json({ msg: 'Email settings updated successfully.', settings });
+
+    } catch (err) {
+        console.error('Email settings update error:', err.message);
+        res.status(500).send('Server Error');
+    }
+});
+
+/**
  * @route   GET /api/admin/users
  * @desc    Get a list of all regular users
  * @access  Private (Admin only)
@@ -83,6 +115,57 @@ router.get('/accounts/:accountId', auth(['admin']), async (req, res) => {
         res.json(populatedAccount);
     } catch (err) {
         console.error(err.message);
+        res.status(500).send('Server Error');
+    }
+});
+
+/**
+ * @route   PUT /api/admin/accounts/:accountId/status
+ * @desc    Admin updates an account's status
+ * @access  Private (Admin only)
+ */
+router.put('/accounts/:accountId/status', auth(['admin']), async (req, res) => {
+    const { status } = req.body;
+    const { accountId } = req.params;
+
+    // 1. Input Validation: Ensure the provided status is a valid option.
+    if (status !== 'Active' && status !== 'Deactivated') {
+        return res.status(400).json({ msg: 'Invalid status provided.' });
+    }
+
+    try {
+        const account = await Account.findById(accountId);
+        if (!account) {
+            return res.status(404).json({ msg: 'Account not found.' });
+        }
+        
+        // Find the primary user's details for the email notification
+        const primaryUser = await User.findById(account.primaryUser);
+
+        // 2. Authorization Check is handled by the auth middleware, ensuring only admins can reach this route.
+        
+        // 3. Update the account's status and save it.
+        account.status = status;
+        await account.save();
+
+        // 4. Send email notification to the primary user
+        if (primaryUser) {
+            const subject = `Your AccountBird Account Status Was Updated`;
+            const htmlContent = `
+                <h2>Hello, ${primaryUser.firstName}!</h2>
+                <p>The status of your AccountBird account has been updated to <strong>${status}</strong> by an administrator.</p>
+                <p>If you have any questions, please contact our support team.</p>
+                <p>Best regards,</p>
+                <p>The AccountBird Team</p>
+            `;
+            await sendEmail(primaryUser.email, subject, htmlContent);
+        } else {
+            console.warn('Primary user not found for account. Email notification not sent.');
+        }
+
+        res.json({ msg: `Account status updated to ${status}` });
+    } catch (err) {
+        console.error('Admin account status update error:', err.message);
         res.status(500).send('Server Error');
     }
 });
@@ -167,7 +250,7 @@ router.delete('/accounts/:accountId', auth(['admin']), async (req, res) => {
                 <ul>
                     <li>Violation of terms of service</li>
                     <li>Request by account owner</li>
-                    <li>Inactivity</li>
+                    <li>Long standing inactivity</li>
                 </ul>
                 <p>If you believe this was a mistake or have any questions, please contact our support team.</p>
                 <p>Thank you for being a part of AccountBird!</p>

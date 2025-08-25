@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { Routes, Route, Link, Navigate } from 'react-router-dom';
 import AdminGeneralSettings from './AdminGeneralSettings';
 import SubscriptionTypes from './AdminSubscriptionTypes';
+import AdminEmailSettings from './AdminEmailSettings';
 import BillingAndPayments from './AdminBillingAndPayments';
 import './AdminSettingsLayout.css';
 
@@ -25,6 +26,10 @@ const AdminSettingsLayout = () => {
                             </Link>
                         </li>
                         <li>
+                            <Link to="/admin/settings/email" className={activeLink === 'email' ? 'active' : ''} onClick={() => setActiveLink('email')}>
+                                Email Settings
+                            </Link>
+                        <li>
                             <Link to="/admin/settings/billing" className={activeLink === 'billing' ? 'active' : ''} onClick={() => setActiveLink('billing')}>
                                 Billing & Payments
                             </Link>
@@ -37,6 +42,7 @@ const AdminSettingsLayout = () => {
                     <Route path="/" element={<Navigate to="general" />} />
                     <Route path="general" element={<AdminGeneralSettings />} />
                     <Route path="subscription" element={<SubscriptionTypes />} />
+                    <Route path="email" element={<AdminEmailSettings />} />
                     <Route path="billing" element={<BillingAndPayments />} />
                 </Routes>
             </div>

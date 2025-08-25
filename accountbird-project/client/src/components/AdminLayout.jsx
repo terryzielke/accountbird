@@ -8,11 +8,10 @@ import AdminDashboard from './AdminDashboard';
 import AdminManageAccounts from './AdminManageAccounts';
 import AdminManageUsers from './AdminManageUsers';
 import AdminAccountDetail from './AdminAccountDetail';
-//import AdminSettingsLayout from './AdminSettingsLayout';
-
 // Settings components
 import AdminGeneralSettings from './AdminGeneralSettings';
 import SubscriptionTypes from './AdminSubscriptionTypes';
+import AdminEmailSettings from './AdminEmailSettings';
 import BillingAndPayments from './AdminBillingAndPayments';
 
 const AdminLayout = ({ user, onLogout }) => {
@@ -29,9 +28,9 @@ const AdminLayout = ({ user, onLogout }) => {
                             <Route path="/admin/accounts" element={<AdminManageAccounts onLogout={onLogout} />} />
                             <Route path="/admin/users" element={<AdminManageUsers onLogout={onLogout} />} />
                             <Route path="/admin/accounts/:accountId" element={<AdminAccountDetail onLogout={onLogout} />} />
-                            {/*<Route path="/admin/settings/*" element={<AdminSettingsLayout />} />*/}
                             <Route path="/admin/settings/general" element={<AdminGeneralSettings onLogout={onLogout} />} />
                             <Route path="/admin/settings/subscription" element={<SubscriptionTypes onLogout={onLogout} />} />
+                            <Route path="/admin/settings/email" element={<AdminEmailSettings onLogout={onLogout} />} />
                             <Route path="/admin/settings/billing" element={<BillingAndPayments onLogout={onLogout} />} />
                             <Route path="*" element={<div>Page Not Found</div>} />
                         </Routes>

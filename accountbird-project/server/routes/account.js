@@ -223,6 +223,55 @@ router.get('/details', auth(), async (req, res) => {
 });
 
 /**
+ * @route   PUT /api/account/status
+ * @desc    Primary user updates their account status
+ * @access  Private (Primary User only)
+ */
+router.put('/status', auth(), async (req, res) => {
+    const { status } = req.body;
+    const { accountId, id } = req.user;
+
+    // 1. Input Validation: Ensure the status is a valid option.
+    if (status !== 'Active' && status !== 'Deactivated') {
+        return res.status(400).json({ msg: 'Invalid status provided.' });
+    }
+
+    try {
+        const account = await Account.findById(accountId);
+        const primaryUser = await User.findById(id); // Fetch the user's details
+
+        if (!account) {
+            return res.status(404).json({ msg: 'Account not found.' });
+        }
+
+        // 2. Authorization Check: Ensure the authenticated user is the primary user.
+        if (String(account.primaryUser) !== String(id)) {
+            return res.status(403).json({ msg: 'Access denied: You are not the primary user for this account.' });
+        }
+        
+        // 3. Update the account status.
+        account.status = status;
+        await account.save();
+
+        // 4. Send email notification to the primary user
+        const subject = `Account Status Changed to ${status}`;
+        const htmlContent = `
+            <h2>Hello, ${primaryUser.firstName}!</h2>
+            <p>The status of your AccountBird account has been updated to <strong>${status}</strong>.</p>
+            <p>If you have any questions or did not authorize this change, please contact support.</p>
+            <p>Best regards,</p>
+            <p>The AccountBird Team</p>
+        `;
+        await sendEmail(primaryUser.email, subject, htmlContent);
+
+        res.json({ msg: `Account status updated to ${status}.` });
+    } catch (err) {
+        console.error('Account status update error:', err.message);
+        res.status(500).send('Server Error');
+    }
+});
+
+/**
  * @route   PUT /api/account/:accountId
  * @desc    Primary user updates their account details
  * @access  Private (Primary User only)

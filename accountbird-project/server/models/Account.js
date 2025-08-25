@@ -20,6 +20,11 @@ const AccountSchema = new mongoose.Schema({
     visibilitySettings: {
         type: Object,
     },
+    status: {
+        type: String,
+        default: 'Active',
+        enum: ['Active', 'Deactivated'],
+    },
     createdDate: {
         type: Date,
         default: Date.now,
