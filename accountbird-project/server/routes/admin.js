@@ -4,6 +4,7 @@ const router = express.Router();
 const auth = require('../middleware/auth');
 const bcrypt = require('bcryptjs');
 const mongoose = require('mongoose');
+const sendEmail = require('../utils/email');
 
 // Import our models
 const User = require('../models/User');
@@ -129,11 +130,24 @@ router.put('/accounts/:accountId', auth(['admin']), async (req, res) => {
  */
 router.delete('/accounts/:accountId', auth(['admin']), async (req, res) => {
     try {
+        // Find the account to be deleted
         const account = await Account.findById(req.params.accountId);
 
         if (!account) {
             return res.status(404).json({ msg: 'Account not found' });
         }
+
+        // Find all users associated with this account before deleting them
+        const usersToDelete = await User.find({ accountId: account._id });
+
+        if (usersToDelete.length === 0) {
+            // Handle the case where no users are found but the account exists
+            await account.deleteOne();
+            return res.status(200).json({ msg: 'Account deleted successfully, no users were associated.' });
+        }
+
+        // Find the primary user's details for the email notification
+        const primaryUser = usersToDelete.find(user => user.role === 'primary_user');
 
         // Delete all users associated with this account
         await User.deleteMany({ accountId: account._id });
@@ -141,7 +155,32 @@ router.delete('/accounts/:accountId', auth(['admin']), async (req, res) => {
         // Delete the account itself
         await account.deleteOne();
 
+        // Send a notification email to the primary user
+        // Check if the primary user was found before sending the email
+        if (primaryUser) {
+            const subject = 'Your AccountBird Account Has Been Deleted';
+            const htmlContent = `
+                <h2>Hello, ${primaryUser.firstName}!</h2>
+                <p>Your account with AccountBird has been <strong>deleted</strong> by the administrator team.</p>
+                <p>Deletion is a permanent action, and all associated data has been removed from our system.</p>
+                <p>Likely reasons for deletion:</p>
+                <ul>
+                    <li>Violation of terms of service</li>
+                    <li>Request by account owner</li>
+                    <li>Inactivity</li>
+                </ul>
+                <p>If you believe this was a mistake or have any questions, please contact our support team.</p>
+                <p>Thank you for being a part of AccountBird!</p>
+                <p>Best regards,</p>
+                <p>The AccountBird Team</p>
+            `;
+            await sendEmail(primaryUser.email, subject, htmlContent);
+        } else {
+            console.warn('Primary user not found for deleted account. Email notification not sent.');
+        }
+
         res.json({ msg: 'Account and associated users deleted successfully' });
+
     } catch (err) {
         console.error(err.message);
         res.status(500).send('Server Error');

@@ -3,6 +3,7 @@ const express = require('express');
 const router = express.Router();
 const auth = require('../middleware/auth');
 const bcrypt = require('bcryptjs');
+const sendEmail = require('../utils/email');
 
 // Import models
 const User = require('../models/User');
