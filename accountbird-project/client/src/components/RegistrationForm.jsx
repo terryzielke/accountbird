@@ -1,9 +1,13 @@
 // client/src/components/RegistrationForm.jsx
 import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import './RegistrationForm.css';
 
 const RegistrationForm = () => {
+    // useNavigate hook for programmatic navigation
+    const navigate = useNavigate();
+
     // State to hold form data
     const [formData, setFormData] = useState({
         firstName: '',
@@ -73,15 +77,16 @@ const RegistrationForm = () => {
             // Post the new user data to the backend registration endpoint
             const response = await axios.post('http://localhost:5001/api/users/register', formData, config);
             
-            // On success, store the token and user data for automatic login
-            localStorage.setItem('token', response.data.token);
+            // On successful registration, remove the token to prevent automatic login
+            localStorage.removeItem('token');
+            // On successful registration, store the token and user data for automatic login
+            //localStorage.setItem('token', response.data.token);
             
             setMessage(response.data.msg);
             
-            // Redirect the user after a brief delay
-            setTimeout(() => {
-                window.location.reload();
-            }, 2000);
+            // Redirect the user to the confirmation page
+            // The state object can be used to pass data between components if needed
+            navigate('/confirmation', { state: { msg: response.data.msg } });
             
         } catch (err) {
             // Display error message from the backend

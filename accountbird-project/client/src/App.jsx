@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import InitializationForm from './components/InitializationForm';
 import LoginPage from './components/LoginPage';
 import RegistrationForm from './components/RegistrationForm';
+import RegistrationConfirmation from './components/RegistrationConfirmation';
 import AdminLayout from './components/AdminLayout';
 import UserLayout from './components/UserLayout';
 
@@ -72,6 +73,7 @@ function App() {
             <Routes>
                 <Route path="/login" element={<LoginPage onLoginSuccess={handleLoginSuccess} />} />
                 <Route path="/register" element={<RegistrationForm />} />
+                <Route path="/confirmation" element={<RegistrationConfirmation />} />
                 <Route path="*" element={<Navigate to="/login" />} />
             </Routes>
         </BrowserRouter>
