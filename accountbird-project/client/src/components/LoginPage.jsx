@@ -66,6 +66,7 @@ const LoginPage = ({ onLoginSuccess }) => {
                     </div>
                     <button type="submit" className="submit-btn">Login</button>
                 </form>
+                <a href="/register" className="login-link">Register</a>
             </div>
         </div>
     );

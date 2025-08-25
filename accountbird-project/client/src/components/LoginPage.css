@@ -9,12 +9,28 @@
 }
 
 .login-container .login {
-    background: white;
-    padding: 0 20px;
-    border-radius: 8px;
-    box-shadow: 0 5px 5px rgba(0, 0, 0, 0.1);
     width: 80%;
     max-width: 500px;
     margin: auto;
     text-align: left;
+}
+
+.login-container .login h2{
+    margin-bottom: 10px;
+}
+
+.login-container .login form {
+    margin: 0 0 20px;
+    padding: 20px 20px 30px;
+    background: #F0F0F0;
+    border-radius: 0;
+} 
+
+.login-container .login form input,
+.login-container .login form select {
+    background-color: white;
+}
+
+.login-container .login form .submit-btn{
+    margin-bottom: 0;
 }

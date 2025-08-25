@@ -1,5 +1,5 @@
 // client/src/components/RegistrationForm.jsx
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import './RegistrationForm.css';
 
@@ -10,12 +10,41 @@ const RegistrationForm = () => {
         lastName: '',
         email: '',
         password: '',
-        accountType: 'subscriber', // Default to subscriber
+        accountType: '', // Default to subscriber
     });
+    const [subscriptionTypes, setSubscriptionTypes] = useState([]);
+    const [loading, setLoading] = useState(true);
     const [message, setMessage] = useState('');
     const [error, setError] = useState('');
 
     const { firstName, lastName, email, password, accountType } = formData;
+
+    // Fetch subscription types from the back end
+    const fetchSubscriptionTypes = useCallback(async () => {
+        try {
+            // Note: The port is changed to 5000 to match your server configuration.
+            const response = await axios.get('http://localhost:5001/api/users/subscription-types');
+            setSubscriptionTypes(response.data || []);
+            
+            // Set the first available subscription type as the default selected value
+            if (response.data && response.data.length > 0) {
+                setFormData(prevFormData => ({
+                    ...prevFormData,
+                    accountType: response.data[0].name,
+                }));
+            }
+        } catch (err) {
+            console.error('Error fetching subscription types:', err);
+            setError('Failed to load available account types.');
+        } finally {
+            setLoading(false);
+        }
+    }, []);
+
+    // Fetch the subscription types when the component mounts
+    useEffect(() => {
+        fetchSubscriptionTypes();
+    }, [fetchSubscriptionTypes]);
 
     // Handle input changes
     const handleChange = (e) => {
@@ -28,16 +57,21 @@ const RegistrationForm = () => {
         setMessage('');
         setError('');
 
+        // Ensure a type is selected before submission
+        if (!accountType) {
+            return setError('Please select an account type.');
+        }
+
         try {
             const config = {
                 headers: {
                     'Content-Type': 'application/json',
                 },
             };
-            const body = JSON.stringify({ firstName, lastName, email, password, accountType });
+            //const body = JSON.stringify({ firstName, lastName, email, password, accountType });
 
             // Post the new user data to the backend registration endpoint
-            const response = await axios.post('http://localhost:5001/api/users/register', body, config);
+            const response = await axios.post('http://localhost:5001/api/users/register', formData, config);
             
             // On success, store the token and user data for automatic login
             localStorage.setItem('token', response.data.token);
@@ -55,42 +89,58 @@ const RegistrationForm = () => {
             console.error(err);
         }
     };
+    
+    // Display loading state while fetching subscription types
+    if (loading) {
+        return <div>Loading account types...</div>;
+    }
+
+    // Display error if no subscription types were found
+    if (subscriptionTypes.length === 0) {
+        return <div>No account types are currently available for registration.</div>;
+    }
 
     return (
         <div className="registration-container">
-            <h2>New User Registration</h2>
-            <p>Create a new account to get started with AccountBird.</p>
+            <div className="registration">
+                <h2>New User Registration</h2>
+                <p>Create a new account to get started with AccountBird.</p>
 
-            {message && <div className="success-message">{message}</div>}
-            {error && <div className="error-message">{error}</div>}
+                {message && <div className="success-message">{message}</div>}
+                {error && <div className="error-message">{error}</div>}
 
-            <form onSubmit={handleSubmit}>
-                <div className="form-group">
-                    <label htmlFor="firstName">First Name</label>
-                    <input type="text" id="firstName" name="firstName" value={firstName} onChange={handleChange} required />
-                </div>
-                <div className="form-group">
-                    <label htmlFor="lastName">Last Name</label>
-                    <input type="text" id="lastName" name="lastName" value={lastName} onChange={handleChange} required />
-                </div>
-                <div className="form-group">
-                    <label htmlFor="email">Email Address</label>
-                    <input type="email" id="email" name="email" value={email} onChange={handleChange} required />
-                </div>
-                <div className="form-group">
-                    <label htmlFor="password">Password</label>
-                    <input type="password" id="password" name="password" value={password} onChange={handleChange} required />
-                </div>
-                <div className="form-group">
-                    <label htmlFor="accountType">Account Type</label>
-                    <select id="accountType" name="accountType" value={accountType} onChange={handleChange}>
-                        <option value="subscriber">Subscriber</option>
-                        <option value="contributor">Contributor</option>
-                    </select>
-                </div>
-                <button type="submit" className="submit-btn">Register</button>
+                <form onSubmit={handleSubmit}>
+                    <div className="form-group">
+                        <label htmlFor="firstName">First Name</label>
+                        <input type="text" id="firstName" name="firstName" value={firstName} onChange={handleChange} required />
+                    </div>
+                    <div className="form-group">
+                        <label htmlFor="lastName">Last Name</label>
+                        <input type="text" id="lastName" name="lastName" value={lastName} onChange={handleChange} required />
+                    </div>
+                    <div className="form-group">
+                        <label htmlFor="email">Email Address</label>
+                        <input type="email" id="email" name="email" value={email} onChange={handleChange} required />
+                    </div>
+                    <div className="form-group">
+                        <label htmlFor="password">Password</label>
+                        <input type="password" id="password" name="password" value={password} onChange={handleChange} required />
+                    </div>
+                    <div className="form-group">
+                        <label htmlFor="accountType">Account Type</label>
+                        <select id="accountType" name="accountType" value={accountType} onChange={handleChange} required>
+                            <option value="">Select an account type</option>
+                            {subscriptionTypes.map(sub => (
+                                <option key={sub._id} value={sub._id}>
+                                    {sub.name}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+                    <button type="submit" className="submit-btn">Register</button>
+                </form>
                 <a href="/login" className="login-link">Already have an account? Login here</a>
-            </form>
+            </div>
         </div>
     );
 };
