@@ -85,17 +85,11 @@ code {
     padding: 0;
 }
 
-.content-area .content.has-secondary-nav nav.secondary-nav a.back-link{
-    display: inline-block;
-    width: 100%;
-    padding: 10px 0;
-    background-color: #F0F0F0;
-    border: none;
-    border-radius: 0;
+.content-area .content.has-secondary-nav nav.secondary-nav h4{
+    width: calc(100% - 40px);
+    margin: 0;
+    padding: 10px 20px;
     font-size: 16px;
-    cursor: pointer;
-    transition: background 0.3s ease;
-    text-align: left;
 }
 
 .content-area .content.has-secondary-nav nav.secondary-nav a.back-link svg{

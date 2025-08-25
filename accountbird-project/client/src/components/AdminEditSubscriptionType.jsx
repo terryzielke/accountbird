@@ -1,9 +1,9 @@
-// client/src/components/EditSubscriptionType.jsx
+// client/src/components/AdminEditSubscriptionType.jsx
 import React, { useState, useMemo } from 'react';
 import axios from 'axios';
-import './EditSubscriptionType.css';
+import './AdminEditSubscriptionType.css';
 
-const EditSubscriptionType = ({ subscription, onTypeUpdated, onBack, onLogout }) => {
+const AdminEditSubscriptionType = ({ subscription, onTypeUpdated, onBack, onLogout }) => {
     const [formData, setFormData] = useState({ name: subscription.name });
     const [message, setMessage] = useState('');
     const [error, setError] = useState('');
@@ -70,4 +70,4 @@ const EditSubscriptionType = ({ subscription, onTypeUpdated, onBack, onLogout })
     );
 };
 
-export default EditSubscriptionType;
+export default AdminEditSubscriptionType;

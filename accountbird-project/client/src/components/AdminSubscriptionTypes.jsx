@@ -1,12 +1,12 @@
-// client/src/components/SubscriptionTypes.jsx
+// client/src/components/AdminSubscriptionTypes.jsx
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useLocation } from 'react-router-dom';
 import axios from 'axios';
-import AddSubscriptionType from './AddSubscriptionType';
-import EditSubscriptionType from './EditSubscriptionType';
-import './SubscriptionTypes.css';
+import AddSubscriptionType from './AdminAddSubscriptionType';
+import EditSubscriptionType from './AdminEditSubscriptionType';
+import './AdminSubscriptionTypes.css';
 
-const SubscriptionTypes = ({ onLogout }) => {
+const AdminSubscriptionTypes = ({ onLogout }) => {
     const [subscriptionTypes, setSubscriptionTypes] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
@@ -111,4 +111,4 @@ const SubscriptionTypes = ({ onLogout }) => {
     );
 };
 
-export default SubscriptionTypes;
+export default AdminSubscriptionTypes;

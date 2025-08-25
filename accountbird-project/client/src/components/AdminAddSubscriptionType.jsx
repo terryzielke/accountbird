@@ -1,9 +1,9 @@
-// client/src/components/AddSubscriptionType.jsx
+// client/src/components/AdminAddSubscriptionType.jsx
 import React, { useState, useMemo } from 'react';
 import axios from 'axios';
-import './AddSubscriptionType.css';
+import './AdminAddSubscriptionType.css';
 
-const AddSubscriptionType = ({ onTypeAdded, onBack, onLogout }) => {
+const AdminAddSubscriptionType = ({ onTypeAdded, onBack, onLogout }) => {
     const [newSubName, setNewSubName] = useState('');
     const [message, setMessage] = useState('');
     const [error, setError] = useState('');
@@ -50,4 +50,4 @@ const AddSubscriptionType = ({ onTypeAdded, onBack, onLogout }) => {
     );
 };
 
-export default AddSubscriptionType;
+export default AdminAddSubscriptionType;

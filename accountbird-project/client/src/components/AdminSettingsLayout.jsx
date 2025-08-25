@@ -1,9 +1,9 @@
 // client/src/components/AdminSettingsLayout.jsx
 import React, { useState } from 'react';
 import { Routes, Route, Link, Navigate } from 'react-router-dom';
-import GeneralSettings from './GeneralSettings';
-import SubscriptionTypes from './SubscriptionTypes';
-import BillingAndPayments from './BillingAndPayments';
+import AdminGeneralSettings from './AdminGeneralSettings';
+import SubscriptionTypes from './AdminSubscriptionTypes';
+import BillingAndPayments from './AdminBillingAndPayments';
 import './AdminSettingsLayout.css';
 
 const AdminSettingsLayout = () => {
@@ -35,7 +35,7 @@ const AdminSettingsLayout = () => {
             <div className="admin-settings-content">
                 <Routes>
                     <Route path="/" element={<Navigate to="general" />} />
-                    <Route path="general" element={<GeneralSettings />} />
+                    <Route path="general" element={<AdminGeneralSettings />} />
                     <Route path="subscription" element={<SubscriptionTypes />} />
                     <Route path="billing" element={<BillingAndPayments />} />
                 </Routes>

@@ -11,9 +11,9 @@ import AdminAccountDetail from './AdminAccountDetail';
 //import AdminSettingsLayout from './AdminSettingsLayout';
 
 // Settings components
-import GeneralSettings from './GeneralSettings';
-import SubscriptionTypes from './SubscriptionTypes';
-import BillingAndPayments from './BillingAndPayments';
+import AdminGeneralSettings from './AdminGeneralSettings';
+import SubscriptionTypes from './AdminSubscriptionTypes';
+import BillingAndPayments from './AdminBillingAndPayments';
 
 const AdminLayout = ({ user, onLogout }) => {
     return (
@@ -30,7 +30,7 @@ const AdminLayout = ({ user, onLogout }) => {
                             <Route path="/admin/users" element={<AdminManageUsers onLogout={onLogout} />} />
                             <Route path="/admin/accounts/:accountId" element={<AdminAccountDetail onLogout={onLogout} />} />
                             {/*<Route path="/admin/settings/*" element={<AdminSettingsLayout />} />*/}
-                            <Route path="/admin/settings/general" element={<GeneralSettings onLogout={onLogout} />} />
+                            <Route path="/admin/settings/general" element={<AdminGeneralSettings onLogout={onLogout} />} />
                             <Route path="/admin/settings/subscription" element={<SubscriptionTypes onLogout={onLogout} />} />
                             <Route path="/admin/settings/billing" element={<BillingAndPayments onLogout={onLogout} />} />
                             <Route path="*" element={<div>Page Not Found</div>} />

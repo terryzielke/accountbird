@@ -1,7 +1,7 @@
 // client/src/components/AdminAccountUsers.jsx
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import axios from 'axios';
-import UserDetail from './UserDetail';
+import UserDetail from './AdminUserDetail';
 import AddUserForm from './AdminAddUserForm';
 import './AdminAccountUsers.css';
 

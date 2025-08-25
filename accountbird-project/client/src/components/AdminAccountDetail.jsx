@@ -66,6 +66,7 @@ const AdminAccountDetail = ({ onLogout }) => {
     return (
         <div className="content account-content has-secondary-nav">
             <nav className="secondary-nav">
+                <h4>{account._id}</h4>
                 <button onClick={() => { setView('users'); handleSetUsersView('list'); }} className={view === 'users' ? 'active' : ''}>
                     Users
                 </button>

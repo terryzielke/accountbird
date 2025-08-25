@@ -1,9 +1,9 @@
-// client/src/components/UserDetail.jsx
+// client/src/components/AdminUserDetail.jsx
 import React, { useState, useMemo } from 'react';
 import axios from 'axios';
-import './UserDetail.css';
+import './AdminUserDetail.css';
 
-const UserDetail = ({ user, onBack, onLogout, onUserDeleted }) => { // Change: Add onUserDeleted to the props
+const AdminUserDetail = ({ user, onBack, onLogout, onUserDeleted }) => { // Change: Add onUserDeleted to the props
     const [userData, setUserData] = useState(user);
     const [formData, setFormData] = useState({
         firstName: user.firstName,
@@ -128,4 +128,4 @@ const UserDetail = ({ user, onBack, onLogout, onUserDeleted }) => { // Change: A
     );
 };
 
-export default UserDetail;
+export default AdminUserDetail;
