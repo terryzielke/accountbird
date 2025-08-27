@@ -14,6 +14,11 @@ const SettingsSchema = new mongoose.Schema({
         type: String,
         required: true,
     },
+    siteDomain: {
+        type: String,
+        required: true,
+        default: 'http://localhost:3000',
+    },
     version: {
         type: String,
         required: true,
@@ -28,8 +33,26 @@ const SettingsSchema = new mongoose.Schema({
         pass: { type: String, default: null },
     },
     emailTemplates: {
-        registrationEmail: { type: String, default: '<h2>Welcome!</h2><p>Your account has been created.</p>' },
-        // ... other email templates will go here
+        registrationEmail: { 
+            type: String, 
+            default: '<h2>Welcome!</h2><p>Your account has been created.</p>' 
+        },
+        accountStatusChanged: {
+            type: String,
+            default: '<h2>Account Status Changed</h2><p>Your account status has been changed to {{status}}.</p>'
+        },
+        subscriptionTypeChanged: {
+            type: String,
+            default: '<h2>Subscription Type Changed</h2><p>Your subscription type has been updated to {{subscriptionType}}.</p>'
+        },
+        userAddedToAccount: {
+            type: String,
+            default: '<h2>Welcome!</h2><p>Your email has been added to an account.</p>'
+        },
+        userRemovedFromAccount: {
+            type: String,
+            default: '<h2>Account Removal</h2><p>Your email has been removed from an account.</p>'
+        },
     }
 });
 

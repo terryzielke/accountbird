@@ -64,6 +64,47 @@ router.post('/users', auth(), async (req, res) => {
         });
 
         const savedUser = await newUser.save();
+        
+        // 1. Generate a unique JWT for account removal for the new user
+        const removalTokenPayload = { user: { id: savedUser.id } };
+        const removalToken = jwt.sign(
+            removalTokenPayload,
+            process.env.JWT_SECRET,
+            { expiresIn: '1d' } // Token expires in 1 day
+        );
+
+        // Fetch settings to get the site name and email template
+        const settings = await Settings.findOne();
+        const siteName = settings.siteName || 'AccountBird';
+        const siteDomain = settings.siteDomain || 'http://localhost:3000';
+        const emailTemplate = settings.emailTemplates.userAddedToAccount || '';
+
+        // Dynamically replace variables in the email template
+        const finalHtml = emailTemplate
+            .replace(/{{newUserFullName}}/g, `${savedUser.firstName} ${savedUser.lastName}`)
+            .replace(/{{newUserEmail}}/g, savedUser.email)
+            .replace(/{{siteName}}/g, siteName);
+            
+        // 2. Append the additional message and link to the WYSIWYG content
+        const appendedHtml = `
+            ${finalHtml}
+            <p>If you did not authorize this action, please click the button below to have your user removed.</p>
+            <a href="${siteDomain}/remove-account?token=${removalToken}" style="
+                background-color: #FF4E4E; 
+                color: white; 
+                padding: 10px 20px; 
+                text-decoration: none; 
+                border-radius: 5px; 
+                display: inline-block;
+            ">Remove My User</a>
+            <p>The ${siteName} Team</p>
+        `;
+
+        const subject = `You have been added to an account on ${siteName}`;
+        
+        // Send a notification email to the new user
+        await sendEmail(savedUser.email, subject, appendedHtml);
+
         res.status(201).json(savedUser);
     } catch (err) {
         console.error('User creation error:', err.message);
@@ -147,8 +188,26 @@ router.delete('/users/:userId', auth(), async (req, res) => {
         if (String(userToDelete.accountId) !== String(accountId)) {
             return res.status(403).json({ msg: 'Access denied: You can only manage users on your own account' });
         }
+        
+        // Find the primary user's details for the email content
+        const primaryUser = await User.findById(id);
 
         await userToDelete.deleteOne();
+        
+        // Fetch settings to get site name and email template
+        const settings = await Settings.findOne();
+        const siteName = settings.siteName || 'AccountBird';
+        const emailTemplate = settings.emailTemplates.userRemovedFromAccount || '';
+
+        // Dynamically replace variables in the email template
+        const finalHtml = emailTemplate
+            .replace(/{{removedUserFullName}}/g, `${userToDelete.firstName} ${userToDelete.lastName}`)
+            .replace(/{{siteName}}/g, siteName);
+        
+        const subject = `Your access to ${siteName} has been removed`;
+
+        // Send a notification email to the deleted user
+        await sendEmail(userToDelete.email, subject, finalHtml);
 
         res.json({ msg: 'User deleted successfully' });
     } catch (err) {
@@ -253,16 +312,18 @@ router.put('/status', auth(), async (req, res) => {
         account.status = status;
         await account.save();
 
-        // 4. Send email notification to the primary user
-        const subject = `Account Status Changed to ${status}`;
-        const htmlContent = `
-            <h2>Hello, ${primaryUser.firstName}!</h2>
-            <p>The status of your AccountBird account has been updated to <strong>${status}</strong>.</p>
-            <p>If you have any questions or did not authorize this change, please contact support.</p>
-            <p>Best regards,</p>
-            <p>The AccountBird Team</p>
-        `;
-        await sendEmail(primaryUser.email, subject, htmlContent);
+        // 4. Fetch the email template from the database and dynamically replace content
+        const settings = await Settings.findOne();
+        const emailTemplate = settings.emailTemplates.accountStatusChanged || '';
+
+        const finalHtml = emailTemplate
+            .replace(/{{firstName}}/g, primaryUser.firstName)
+            .replace(/{{status}}/g, status);
+
+        const subject = `Your AccountBird Account Status Has Been Changed`;
+
+        // 5. Send email notification to the primary user
+        await sendEmail(primaryUser.email, subject, finalHtml);
 
         res.json({ msg: `Account status updated to ${status}.` });
     } catch (err) {
@@ -287,6 +348,9 @@ router.put('/:accountId', auth(), async (req, res) => {
             return res.status(404).json({ msg: 'Account not found' });
         }
 
+        // Store the original account type for comparison
+        const originalAccountType = accountToUpdate.accountType;
+
         // Ensure the authenticated user is the primary user
         if (String(accountToUpdate.primaryUser) !== String(id)) {
             return res.status(403).json({ msg: 'Access denied: You are not the primary user for this account' });
@@ -297,6 +361,28 @@ router.put('/:accountId', auth(), async (req, res) => {
         }
 
         await accountToUpdate.save();
+
+        // Check if the subscription type has actually changed
+        if (String(originalAccountType) !== String(accountToUpdate.accountType)) {
+            const primaryUser = await User.findById(id);
+            const settings = await Settings.findOne();
+            const siteName = settings.siteName || 'AccountBird';
+            
+            // Find the name of the new subscription type for the email
+            const newSubscriptionType = settings.subscriptionTypes.find(sub => String(sub._id) === String(accountToUpdate.accountType));
+            const newSubscriptionName = newSubscriptionType ? newSubscriptionType.name : 'Unknown';
+
+            // Fetch the email template from the database and populate variables
+            const emailTemplate = settings.emailTemplates.subscriptionTypeChanged || '';
+            const finalHtml = emailTemplate
+                .replace(/{{firstName}}/g, primaryUser.firstName)
+                .replace(/{{subscriptionType}}/g, newSubscriptionName);
+
+            const subject = `Your ${siteName} Subscription Has Changed`;
+            
+            await sendEmail(primaryUser.email, subject, finalHtml);
+        }
+
         res.json({ msg: 'Account updated successfully' });
     } catch (err) {
         console.error('Account update error:', err.message);

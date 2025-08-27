@@ -4,7 +4,7 @@ import axios from 'axios';
 
 const GeneralSettings = ({ onLogout }) => {
     const [settings, setSettings] = useState(null);
-    const [formData, setFormData] = useState({ siteName: '' });
+    const [formData, setFormData] = useState({ siteName: '', siteDomain: '' });
     const [loading, setLoading] = useState(true);
     const [message, setMessage] = useState('');
     const [error, setError] = useState('');
@@ -22,7 +22,7 @@ const GeneralSettings = ({ onLogout }) => {
         try {
             const response = await axios.get('http://localhost:5001/api/admin/settings', config);
             setSettings(response.data);
-            setFormData({ siteName: response.data.siteName });
+            setFormData({ siteName: response.data.siteName, siteDomain: response.data.siteDomain });
             setError('');
         } catch (err) {
             console.error('Error fetching settings:', err);
@@ -78,6 +78,10 @@ const GeneralSettings = ({ onLogout }) => {
                 <div className="form-group">
                     <label htmlFor="siteName">Site Name</label>
                     <input type="text" id="siteName" name="siteName" value={formData.siteName} onChange={handleChange} />
+                </div>
+                <div className="form-group">
+                    <label htmlFor="siteDomain">Site Domain</label>
+                    <input type="text" id="siteDomain" name="siteDomain" value={formData.siteDomain} onChange={handleChange} />
                 </div>
                 <button type="submit" className="submit-btn">Update</button>
             </form>

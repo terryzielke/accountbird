@@ -1,23 +1,5 @@
 const nodemailer = require('nodemailer');
-const dotenv = require('dotenv');
-
-dotenv.config();
-
-// Create a transporter object using the default SMTP transport
-const transporter = nodemailer.createTransport({
-    host: process.env.EMAIL_HOST,
-    port: process.env.EMAIL_PORT,
-    secure: false, // Use 'false' for ports 587 and 2525
-    auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
-    },
-    // Add requireTLS to enforce a TLS connection
-    // This is recommended for port 587
-    tls: {
-      ciphers: 'SSLv3'
-    }
-});
+const Settings = require('../models/Settings'); // Import the Settings model
 
 /**
  * Sends an email using the configured transporter.
@@ -27,8 +9,28 @@ const transporter = nodemailer.createTransport({
  */
 const sendEmail = async (to, subject, htmlContent) => {
     try {
+        // Fetch the email settings and site name from the database
+        const settings = await Settings.findOne();
+        if (!settings || !settings.emailSettings.host) {
+            console.error('Email settings not found in the database. Email not sent.');
+            return;
+        }
+
+        const siteName = settings.siteName || 'AccountBird';
+
+        // Create a new transporter with the dynamic settings from the database
+        const transporter = nodemailer.createTransport({
+            host: settings.emailSettings.host,
+            port: settings.emailSettings.port,
+            secure: settings.emailSettings.port === 465, // true for 465, false for other ports
+            auth: {
+                user: settings.emailSettings.user,
+                pass: settings.emailSettings.pass,
+            },
+        });
+        
         await transporter.sendMail({
-            from: `"AccountBird" <${process.env.EMAIL_USER}>`,
+            from: `"${siteName}" <${settings.emailSettings.user}>`,
             to: to,
             subject: subject,
             html: htmlContent,
@@ -36,7 +38,6 @@ const sendEmail = async (to, subject, htmlContent) => {
         console.log(`Email sent successfully to ${to}`);
     } catch (error) {
         console.error(`Error sending email to ${to}:`, error);
-        // In a production app, you might log this error to a monitoring service
     }
 };
 

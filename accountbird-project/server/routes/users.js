@@ -69,29 +69,23 @@ router.post('/register', async (req, res) => {
         );
         
         // Create the email removal link
-        const removalLink = `http://localhost:3000/remove-account?token=${removalToken}`;
+        const siteDomain = settings.siteDomain || 'http://localhost:3000';
+        const removalLink = `${siteDomain}/remove-account?token=${removalToken}`;
 
-        // Send a notification email to the new primary user
-        const subject = 'Welcome to AccountBird!';
-        const htmlContent = `
-            <h2>Hello, ${savedUser.firstName}!</h2>
-            <p>Your account with AccountBird has been successfully created. You can now log in and manage your account.</p>
-            <p>Thank you for joining us!</p>
+        // Fetch the email template from the database
+        const settings = await Settings.findOne();
+        const siteName = settings.siteName || 'AccountBird';
+        const emailTemplate = settings.emailTemplates.registrationEmail || '';
+        
+        // Dynamically replace variables in the email template
+        const finalHtml = emailTemplate
+            .replace(/{{firstName}}/g, savedUser.firstName)
+            .replace(/{{lastName}}/g, savedUser.lastName)
+            .replace(/{{email}}/g, savedUser.email);
             
-            <p>If you did not sign up for this account, please click the button below to remove your email from our system.</p>
-            
-            <a href="${removalLink}" style="
-                background-color: #FF4E4E; 
-                color: white; 
-                padding: 10px 20px; 
-                text-decoration: none; 
-                border-radius: 5px; 
-                display: inline-block;
-            ">Remove My Account</a>
-            
-            <p>The AccountBird Team</p>
-        `;
-        await sendEmail(savedUser.email, subject, htmlContent);
+        // Send the notification email
+        const subject = `Welcome to ${siteName}!`;
+        await sendEmail(savedUser.email, subject, finalHtml);
 
         // Create and sign JWT for automatic login
         const payload = {

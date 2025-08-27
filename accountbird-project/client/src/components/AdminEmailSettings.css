@@ -1,0 +1,12 @@
+h3{
+    margin-top: 40px;
+}
+.rdw-editor-toolbar{
+    background: #F0F0F0;
+    border: none;
+}
+.wysiwyg-editor{
+    border: 1px solid #EEE;
+    min-height: 400px;
+    padding: 10px;
+}

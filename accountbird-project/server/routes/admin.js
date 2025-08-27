@@ -150,15 +150,19 @@ router.put('/accounts/:accountId/status', auth(['admin']), async (req, res) => {
 
         // 4. Send email notification to the primary user
         if (primaryUser) {
-            const subject = `Your AccountBird Account Status Was Updated`;
-            const htmlContent = `
-                <h2>Hello, ${primaryUser.firstName}!</h2>
-                <p>The status of your AccountBird account has been updated to <strong>${status}</strong> by an administrator.</p>
-                <p>If you have any questions, please contact our support team.</p>
-                <p>Best regards,</p>
-                <p>The AccountBird Team</p>
-            `;
-            await sendEmail(primaryUser.email, subject, htmlContent);
+            // Fetch the email template from the database
+            const settings = await Settings.findOne();
+            const emailTemplate = settings.emailTemplates.accountStatusChanged || '';
+
+            // Dynamically replace variables in the email template
+            const finalHtml = emailTemplate
+                .replace(/{{firstName}}/g, primaryUser.firstName)
+                .replace(/{{status}}/g, status);
+
+            const siteName = settings.siteName || 'AccountBird';
+            const subject = `Your ${siteName} Account Status Was Updated`;
+
+            await sendEmail(primaryUser.email, subject, finalHtml);
         } else {
             console.warn('Primary user not found for account. Email notification not sent.');
         }
@@ -184,6 +188,9 @@ router.put('/accounts/:accountId', auth(['admin']), async (req, res) => {
             return res.status(404).json({ msg: 'Account not found' });
         }
 
+        // Store the original account type for comparison
+        const originalAccountType = account.accountType;
+
         if (accountTypeId) {
             account.accountType = accountTypeId;
         }
@@ -192,12 +199,31 @@ router.put('/accounts/:accountId', auth(['admin']), async (req, res) => {
         
         // After saving, we need to manually populate the accountType field
         const settings = await Settings.findOne();
+        const siteName = settings.siteName || 'AccountBird';
         const subscriptionType = settings.subscriptionTypes.find(sub => String(sub._id) === String(account.accountType));
         
         const updatedAccount = {
             ...account._doc,
             accountType: subscriptionType ? subscriptionType.name : 'Unknown'
         };
+
+        // Check if the subscription type has actually changed
+        if (String(originalAccountType) !== String(updatedAccount.accountType._id)) {
+            // Find the primary user's details for the email notification
+            const primaryUser = await User.findById(account.primaryUser);
+
+            if (primaryUser) {
+                // Fetch the email template from the database
+                const emailTemplate = settings.emailTemplates.subscriptionTypeChanged || '';
+                const finalHtml = emailTemplate
+                    .replace(/{{firstName}}/g, primaryUser.firstName)
+                    .replace(/{{subscriptionType}}/g, updatedAccount.accountType);
+                
+                const subject = `Your ${siteName} Subscription Has Changed`;
+
+                await sendEmail(primaryUser.email, subject, finalHtml);
+            }
+        }
 
         res.json(updatedAccount);
     } catch (err) {
@@ -238,13 +264,17 @@ router.delete('/accounts/:accountId', auth(['admin']), async (req, res) => {
         // Delete the account itself
         await account.deleteOne();
 
+        // Fetch settings to get the site name
+        const settings = await Settings.findOne();
+        const siteName = settings.siteName || 'AccountBird';
+
         // Send a notification email to the primary user
         // Check if the primary user was found before sending the email
         if (primaryUser) {
-            const subject = 'Your AccountBird Account Has Been Deleted';
+            const subject = `Your ${siteName} Account Has Been Deleted`;
             const htmlContent = `
                 <h2>Hello, ${primaryUser.firstName}!</h2>
-                <p>Your account with AccountBird has been <strong>deleted</strong> by the administrator team.</p>
+                <p>Your account with ${siteName} has been <strong>deleted</strong> by the administrator team.</p>
                 <p>Deletion is a permanent action, and all associated data has been removed from our system.</p>
                 <p>Likely reasons for deletion:</p>
                 <ul>
@@ -253,9 +283,9 @@ router.delete('/accounts/:accountId', auth(['admin']), async (req, res) => {
                     <li>Long standing inactivity</li>
                 </ul>
                 <p>If you believe this was a mistake or have any questions, please contact our support team.</p>
-                <p>Thank you for being a part of AccountBird!</p>
+                <p>Thank you for being a part of ${siteName}!</p>
                 <p>Best regards,</p>
-                <p>The AccountBird Team</p>
+                <p>The ${siteName} Team</p>
             `;
             await sendEmail(primaryUser.email, subject, htmlContent);
         } else {
@@ -362,19 +392,59 @@ router.put('/users/:userId/password', auth(['admin']), async (req, res) => {
 });
 
 /**
- * @route   DELETE /api/admin/user/:userId
+ * @route   DELETE /api/admin/users/:userId
  * @desc    Delete a user by ID
  * @access  Private (Admin only)
  */
 router.delete('/users/:userId', auth(['admin']), async (req, res) => {
     try {
-        const user = await User.findById(req.params.userId);
+        const userToDelete = await User.findById(req.params.userId);
 
-        if (!user) {
+        if (!userToDelete) {
             return res.status(404).json({ msg: 'User not found' });
         }
+        
+        // Find the account and its primary user before deleting the user
+        const account = await Account.findById(userToDelete.accountId);
+        
+        // If the user being deleted is the primary user, do not proceed with deletion
+        if (account && String(account.primaryUser) === String(userToDelete._id)) {
+            return res.status(403).json({ msg: 'Cannot delete the primary user of an account.' });
+        }
 
-        await user.deleteOne();
+        await userToDelete.deleteOne();
+
+        const settings = await Settings.findOne();
+        const siteName = settings.siteName || 'AccountBird';
+        
+        // 1. Email to the deleted user (dynamic content from Wysiwyg)
+        const emailTemplate = settings.emailTemplates.userRemovedFromAccount || '';
+        const removedUserHtml = emailTemplate
+            .replace(/{{firstName}}/g, userToDelete.firstName)
+            .replace(/{{lastName}}/g, userToDelete.lastName)
+            .replace(/{{email}}/g, userToDelete.email)
+            .replace(/{{siteName}}/g, siteName);
+
+        const removedUserSubject = `Your access to ${siteName} has been removed`;
+
+        await sendEmail(userToDelete.email, removedUserSubject, removedUserHtml);
+
+        // 2. Email to the primary user (static HTML)
+        if (account && account.primaryUser) {
+            const primaryUser = await User.findById(account.primaryUser);
+            if (primaryUser) {
+                const primaryUserSubject = `A user has been removed from your ${siteName} account`;
+                const primaryUserHtml = `
+                    <h2>Hello, ${primaryUser.firstName}!</h2>
+                    <p>A user, **${userToDelete.firstName} ${userToDelete.lastName}** (${userToDelete.email}), has been removed from your account by an administrator.</p>
+                    <p>If you have any questions, please contact our support team.</p>
+                    <p>Best regards,</p>
+                    <p>The ${siteName} Team</p>
+                `;
+                
+                await sendEmail(primaryUser.email, primaryUserSubject, primaryUserHtml);
+            }
+        }
 
         res.json({ msg: 'User deleted successfully' });
     } catch (err) {
@@ -430,6 +500,44 @@ router.post('/accounts/:accountId/users', auth(['admin']), async (req, res) => {
         });
 
         const savedUser = await newUser.save();
+        
+        // Find the primary user of the account to send the notification
+        const account = await Account.findById(accountId);
+        if (account && account.primaryUser) {
+            const primaryUser = await User.findById(account.primaryUser);
+
+            if (primaryUser) {
+                const settings = await Settings.findOne();
+                const siteName = settings.siteName || 'AccountBird';
+                const emailTemplate = settings.emailTemplates.userAddedToAccount || '';
+
+                // 1. Email to the newly added user (dynamic content)
+                const finalHtml = emailTemplate
+                    .replace(/{{firstName}}/g, savedUser.firstName)
+                    .replace(/{{lastName}}/g, savedUser.lastName)
+                    .replace(/{{siteName}}/g, siteName)
+                    .replace(/{{email}}/g, savedUser.email);
+
+                const newuserSubject = `You have been added to an account on ${siteName}`;
+
+                await sendEmail(savedUser.email, newuserSubject, finalHtml);
+
+                // 2. Email to the Primary User (static content with dynamic user details)
+                const primaryUserSubject = `A new user has been added to your ${siteName} account`;
+                const primaryUserHtml = `
+                    <h2>Hello, ${primaryUser.firstName}!</h2>
+                    <p>A new user, **${savedUser.firstName} ${savedUser.lastName}** (${savedUser.email}), has been added to your account by an administrator.</p>
+                    <p>If you did not authorize this change, please contact our support team immediately.</p>
+                    <p>Best regards,</p>
+                    <p>The ${siteName} Team</p>
+                `;
+                
+                await sendEmail(primaryUser.email, primaryUserSubject, primaryUserHtml);
+            } else {
+                console.warn('Primary user not found. Email notification not sent.');
+            }
+        }
+
         res.status(201).json(savedUser);
     } catch (err) {
         console.error('Admin user creation error:', err.message);
@@ -506,9 +614,10 @@ router.get('/settings', auth(['admin']), async (req, res) => {
  * @access  Private (Admin only)
  */
 router.put('/settings', auth(['admin']), async (req, res) => {
-    const { siteName } = req.body;
+    const { siteName, siteDomain } = req.body;
     const settingsFields = {};
     if (siteName) settingsFields.siteName = siteName;
+    if (siteDomain) settingsFields.siteDomain = siteDomain;
 
     try {
         let settings = await Settings.findOne();
@@ -517,6 +626,7 @@ router.put('/settings', auth(['admin']), async (req, res) => {
         }
 
         settings.siteName = settingsFields.siteName;
+        settings.siteDomain = settingsFields.siteDomain;
         await settings.save();
         
         res.json(settings);
