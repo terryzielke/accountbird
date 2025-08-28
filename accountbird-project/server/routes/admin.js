@@ -5,6 +5,7 @@ const auth = require('../middleware/auth');
 const bcrypt = require('bcryptjs');
 const mongoose = require('mongoose');
 const sendEmail = require('../utils/email');
+const jwt = require('jsonwebtoken');
 
 // Import our models
 const User = require('../models/User');
@@ -460,10 +461,24 @@ router.delete('/users/:userId', auth(['admin']), async (req, res) => {
             .replace(/{{lastName}}/g, userToDelete.lastName)
             .replace(/{{email}}/g, userToDelete.email)
             .replace(/{{siteName}}/g, siteName);
+            
+        // Append the additional message and link to the WYSIWYG content
+        const appendedHtml = `
+            <div style="width: 100%; text-align: center; margin-bottom: 20px;padding: 50px 0;">
+                <div style="margin: auto; width: 80%; max-width: 600px; font-family: Arial, sans-serif; color: #333; text-align: left;">
+                    <h3 style="margin: 0 10px;">${siteName}</h3>
+                    <div style="margin-top: 20px; padding: 10px; border: 1px solid #eee; border-radius: 5px; background-color: #fff;">
+                    ${finalHtml}
+                        <p style="margin-top: 20px; border-top: 1px solid #eee; padding-top: 20px;">User deletion is a final action and cannot be undone.</p>
+                        <p>The ${siteName} Team</p>
+                    </div>
+                </div>
+            </div>
+        `;
 
-        const removedUserSubject = `Your access to ${siteName} has been removed`;
+        const removedUserSubject = `Your user to ${siteName} has been permanently removed`;
 
-        await sendEmail(userToDelete.email, removedUserSubject, removedUserHtml);
+        await sendEmail(userToDelete.email, removedUserSubject, appendedHtml);
 
         // 2. Email to the primary user (static HTML)
         if (account && account.primaryUser) {
@@ -537,6 +552,14 @@ router.post('/accounts/:accountId/users', auth(['admin']), async (req, res) => {
 
         const savedUser = await newUser.save();
         
+        // 1. Generate a unique JWT for account removal for the new user
+        const removalTokenPayload = { user: { id: savedUser.id } };
+        const removalToken = jwt.sign(
+            removalTokenPayload,
+            process.env.JWT_SECRET,
+            { expiresIn: '1d' } // Token expires in 1 day
+        );
+        
         // Find the primary user of the account to send the notification
         const account = await Account.findById(accountId);
         if (account && account.primaryUser) {
@@ -553,10 +576,33 @@ router.post('/accounts/:accountId/users', auth(['admin']), async (req, res) => {
                     .replace(/{{lastName}}/g, savedUser.lastName)
                     .replace(/{{siteName}}/g, siteName)
                     .replace(/{{email}}/g, savedUser.email);
+            
+                // Append the additional message and link to the WYSIWYG content
+                const appendedHtml = `
+                <div style="width: 100%; text-align: center; margin-bottom: 20px;padding: 50px 0;">
+                    <div style="margin: auto; width: 80%; max-width: 600px; font-family: Arial, sans-serif; color: #333; text-align: left;">
+                        <h3 style="margin: 0 10px;">${siteName}</h3>
+                        <div style="margin-top: 20px; padding: 10px; border: 1px solid #eee; border-radius: 5px; background-color: #fff;">
+                        ${finalHtml}
+                        
+                            <p style="margin-top: 20px; border-top: 1px solid #eee; padding-top: 20px;">If you did not authorize this action, please click the button below to have your user removed.</p>
+                            <a href="${siteDomain}/remove-account?token=${removalToken}" style="
+                                background-color: #FF4E4E; 
+                                color: white; 
+                                padding: 10px 20px; 
+                                text-decoration: none; 
+                                border-radius: 5px; 
+                                display: inline-block;
+                            ">Remove My User</a>
+                            <p>The ${siteName} Team</p>
+                        </div>
+                    </div>
+                </div>
+                `;
 
                 const newuserSubject = `You have been added to an account on ${siteName}`;
 
-                await sendEmail(savedUser.email, newuserSubject, finalHtml);
+                await sendEmail(savedUser.email, newuserSubject, appendedHtml);
 
                 // 2. Email to the Primary User (static content with dynamic user details)
                 const primaryUserSubject = `A new user has been added to your ${siteName} account`;

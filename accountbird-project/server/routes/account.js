@@ -4,6 +4,7 @@ const router = express.Router();
 const auth = require('../middleware/auth');
 const bcrypt = require('bcryptjs');
 const sendEmail = require('../utils/email');
+const jwt = require('jsonwebtoken');
 
 // Import models
 const User = require('../models/User');
@@ -72,33 +73,40 @@ router.post('/users', auth(), async (req, res) => {
             process.env.JWT_SECRET,
             { expiresIn: '1d' } // Token expires in 1 day
         );
-
+        
         // Fetch settings to get the site name and email template
         const settings = await Settings.findOne();
         const siteName = settings.siteName || 'AccountBird';
-        const siteDomain = settings.siteDomain || 'http://localhost:3000';
         const emailTemplate = settings.emailTemplates.userAddedToAccount || '';
+        const siteDomain = settings.siteDomain || 'http://localhost:5001';
 
         // Dynamically replace variables in the email template
         const finalHtml = emailTemplate
-            .replace(/{{newUserFullName}}/g, `${savedUser.firstName} ${savedUser.lastName}`)
+            .replace(/{{firstName}}/g, savedUser.firstName)
+            .replace(/{{lastName}}/g, savedUser.lastName)
             .replace(/{{newUserEmail}}/g, savedUser.email)
             .replace(/{{siteName}}/g, siteName);
             
-        // 2. Append the additional message and link to the WYSIWYG content
+        // Append the additional message and link to the WYSIWYG content
         const appendedHtml = `
-            ${finalHtml}
-            <div style="margin-top: 20px; padding: 10px; border: 1px solid #ccc; background-color: #f9f9f9;">
-                <p>If you did not authorize this action, please click the button below to have your user removed.</p>
-                <a href="${siteDomain}/remove-account?token=${removalToken}" style="
-                    background-color: #FF4E4E; 
-                    color: white; 
-                    padding: 10px 20px; 
-                    text-decoration: none; 
-                    border-radius: 5px; 
-                    display: inline-block;
-                ">Remove My User</a>
-                <p>The ${siteName} Team</p>
+            <div style="width: 100%; text-align: center; margin-bottom: 20px;padding: 50px 0;">
+                <div style="margin: auto; width: 80%; max-width: 600px; font-family: Arial, sans-serif; color: #333; text-align: left;">
+                    <h3 style="margin: 0 10px;">${siteName}</h3>
+                    <div style="margin-top: 20px; padding: 10px; border: 1px solid #eee; border-radius: 5px; background-color: #fff;">
+                    ${finalHtml}
+                    
+                        <p style="margin-top: 20px; border-top: 1px solid #eee; padding-top: 20px;">If you did not authorize this action, please click the button below to have your user removed.</p>
+                        <a href="${siteDomain}/remove-account?token=${removalToken}" style="
+                            background-color: #FF4E4E; 
+                            color: white; 
+                            padding: 10px 20px; 
+                            text-decoration: none; 
+                            border-radius: 5px; 
+                            display: inline-block;
+                        ">Remove My User</a>
+                        <p>The ${siteName} Team</p>
+                    </div>
+                </div>
             </div>
         `;
 
@@ -107,7 +115,9 @@ router.post('/users', auth(), async (req, res) => {
         // Send a notification email to the new user
         await sendEmail(savedUser.email, subject, appendedHtml);
 
-        res.status(201).json(savedUser);
+        // Explicitly send a 201 status for successful creation.
+        res.status(201).json({ msg: 'User added successfully!', user: savedUser });
+
     } catch (err) {
         console.error('User creation error:', err.message);
         res.status(500).send('Server Error');
@@ -245,13 +255,28 @@ router.delete('/users/:userId', auth(), async (req, res) => {
 
         // Dynamically replace variables in the email template
         const finalHtml = emailTemplate
-            .replace(/{{removedUserFullName}}/g, `${userToDelete.firstName} ${userToDelete.lastName}`)
+            .replace(/{{firstName}}/g, userToDelete.firstName)
+            .replace(/{{lastName}}/g, userToDelete.lastName)
             .replace(/{{siteName}}/g, siteName);
+            
+        // Append the additional message and link to the WYSIWYG content
+        const appendedHtml = `
+            <div style="width: 100%; text-align: center; margin-bottom: 20px;padding: 50px 0;">
+                <div style="margin: auto; width: 80%; max-width: 600px; font-family: Arial, sans-serif; color: #333; text-align: left;">
+                    <h3 style="margin: 0 10px;">${siteName}</h3>
+                    <div style="margin-top: 20px; padding: 10px; border: 1px solid #eee; border-radius: 5px; background-color: #fff;">
+                    ${finalHtml}
+                        <p style="margin-top: 20px; border-top: 1px solid #eee; padding-top: 20px;">User deletion is a final action and cannot be undone.</p>
+                        <p>The ${siteName} Team</p>
+                    </div>
+                </div>
+            </div>
+        `;
         
-        const subject = `Your access to ${siteName} has been removed`;
+        const subject = `Your user to ${siteName} has been permanently removed`;
 
         // Send a notification email to the deleted user
-        await sendEmail(userToDelete.email, subject, finalHtml);
+        await sendEmail(userToDelete.email, subject, appendedHtml);
 
         res.json({ msg: 'User deleted successfully' });
     } catch (err) {
