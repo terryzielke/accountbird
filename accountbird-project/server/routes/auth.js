@@ -1,12 +1,12 @@
-// server/routes/auth.js
 const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
-// Import both the Admin and User models
+// Import both the Admin and User models, and the Account model
 const Admin = require('../models/Admin');
 const User = require('../models/User');
+const Account = require('../models/Account');
 
 /**
  * @route   POST /api/auth/login
@@ -31,6 +31,31 @@ router.post('/login', async (req, res) => {
             user = regularUser;
             role = regularUser.role;
             isRegularUser = true;
+            
+            // 1. Check if the user's individual status is Deactivated
+            if (user.status === 'Deactivated') {
+                return res.status(403).json({ msg: 'Your user account is deactivated. Please contact your account administrator for assistance.' });
+            }
+
+            // 2. Check the account status based on the user's role
+            if (user.accountId) {
+                const account = await Account.findById(user.accountId);
+                if (!account) {
+                    return res.status(404).json({ msg: 'Associated account not found.' });
+                }
+
+                // If the account is deactivated
+                if (account.status === 'Deactivated') {
+                    // Allow the primary user to log in to manage the account
+                    if (user.role === 'primary_user') {
+                        // Continue with login
+                    } else {
+                        // Block all other users from a deactivated account
+                        return res.status(403).json({ msg: 'This account is currently deactivated. Only the primary user can log in.' });
+                    }
+                }
+            }
+
         } else {
             // If not a regular user, check for an admin
             const admin = await Admin.findOne({ email });

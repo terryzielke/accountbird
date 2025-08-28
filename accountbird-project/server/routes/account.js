@@ -165,6 +165,48 @@ router.put('/users/:userId', auth(), async (req, res) => {
 });
 
 /**
+ * @route   PUT /api/account/users/:userId/status
+ * @desc    Primary user updates a user's status
+ * @access  Private (Primary User only)
+ */
+router.put('/users/:userId/status', auth(), async (req, res) => {
+    const { status } = req.body;
+    const { userId } = req.params;
+    const { accountId, id } = req.user;
+
+    // 1. Input Validation: Ensure the status is a valid option.
+    if (status !== 'Active' && status !== 'Deactivated') {
+        return res.status(400).json({ msg: 'Invalid status provided.' });
+    }
+
+    try {
+        const userToUpdate = await User.findById(userId);
+        if (!userToUpdate) {
+            return res.status(404).json({ msg: 'User not found.' });
+        }
+
+        // 2. Authorization Check: Ensure the user being updated is on the primary user's account.
+        if (String(userToUpdate.accountId) !== String(accountId)) {
+            return res.status(403).json({ msg: 'Access denied: You can only manage users on your own account.' });
+        }
+
+        // 3. Prevent a primary user from deactivating themselves.
+        if (String(userToUpdate._id) === String(id)) {
+            return res.status(403).json({ msg: 'Access denied: Cannot change your own status.' });
+        }
+
+        // 4. Update the user's status and save.
+        userToUpdate.status = status;
+        await userToUpdate.save();
+
+        res.json({ msg: `User status updated to ${status}` });
+    } catch (err) {
+        console.error('User status update error:', err.message);
+        res.status(500).send('Server Error');
+    }
+});
+
+/**
  * @route   DELETE /api/account/users/:userId
  * @desc    Primary user deletes a user from their account
  * @access  Private (Primary User only)

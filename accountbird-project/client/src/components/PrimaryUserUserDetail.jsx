@@ -10,6 +10,7 @@ const PrimaryUserUserDetail = ({ user, onBack, onLogout }) => {
         lastName: user.lastName,
         email: user.email,
         role: user.role,
+        status: user.status,
     });
     const [passwordFormData, setPasswordFormData] = useState({
         newPassword: '',
@@ -49,6 +50,26 @@ const PrimaryUserUserDetail = ({ user, onBack, onLogout }) => {
             setMessage('User updated successfully!');
         } catch (err) {
             setError(err.response?.data?.msg || 'An error occurred while updating the user.');
+            if (err.response?.status === 401 || err.response?.status === 403) {
+                onLogout();
+            }
+        }
+    };
+
+    const handleStatusUpdate = async (e) => {
+        e.preventDefault();
+        setMessage('');
+        setError('');
+        try {
+            const body = {
+                status: formData.status,
+            };
+            // Call the dedicated status update endpoint
+            const response = await axios.put(`http://localhost:5001/api/account/users/${userData._id}/status`, body, config);
+            setUserData(prevData => ({ ...prevData, status: formData.status }));
+            setMessage(response.data.msg);
+        } catch (err) {
+            setError(err.response?.data?.msg || 'An error occurred while updating the user status.');
             if (err.response?.status === 401 || err.response?.status === 403) {
                 onLogout();
             }
@@ -115,11 +136,23 @@ const PrimaryUserUserDetail = ({ user, onBack, onLogout }) => {
             </form>
 
             <hr/>
+            
+            <form onSubmit={handleStatusUpdate}>
+                <div className="form-group">
+                    <label htmlFor="status">User Status</label>
+                    <select id="status" name="status" value={formData.status} onChange={handleChange}>
+                        <option value="Active">Active</option>
+                        <option value="Deactivated">Deactivated</option>
+                    </select>
+                </div>
+                <button type="submit" className="submit-btn">Update Status</button>
+            </form>
 
-            <h3>Update Password</h3>
+            <hr/>
+
             <form onSubmit={handlePasswordUpdate}>
                 <div className="form-group">
-                    <label htmlFor="newPassword">New Password</label>
+                    <label htmlFor="newPassword">Change Password</label>
                     <input type="password" id="newPassword" name="newPassword" value={passwordFormData.newPassword} onChange={handlePasswordChange} required />
                 </div>
                 <button type="submit" className="submit-btn">Update Password</button>

@@ -392,6 +392,42 @@ router.put('/users/:userId/password', auth(['admin']), async (req, res) => {
 });
 
 /**
+ * @route   PUT /api/admin/users/:userId/status
+ * @desc    Admin updates a user's status
+ * @access  Private (Admin only)
+ */
+router.put('/users/:userId/status', auth(['admin']), async (req, res) => {
+    const { status } = req.body;
+    const { userId } = req.params;
+
+    // 1. Input Validation: Ensure the provided status is a valid option.
+    if (status !== 'Active' && status !== 'Deactivated') {
+        return res.status(400).json({ msg: 'Invalid status provided.' });
+    }
+
+    try {
+        const userToUpdate = await User.findById(userId);
+        if (!userToUpdate) {
+            return res.status(404).json({ msg: 'User not found.' });
+        }
+
+        // 2. Authorization Check: Prevent an admin from deactivating themselves.
+        if (String(userToUpdate._id) === String(req.user.id)) {
+            return res.status(403).json({ msg: 'Access denied: Cannot change your own status.' });
+        }
+
+        // 3. Update the user's status and save.
+        userToUpdate.status = status;
+        await userToUpdate.save();
+
+        res.json({ msg: `User status updated to ${status}` });
+    } catch (err) {
+        console.error('Admin user status update error:', err.message);
+        res.status(500).send('Server Error');
+    }
+});
+
+/**
  * @route   DELETE /api/admin/users/:userId
  * @desc    Delete a user by ID
  * @access  Private (Admin only)
