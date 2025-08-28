@@ -26,7 +26,7 @@ const RemoveAccount = () => {
                 };
                 const body = { token };
 
-                const response = await axios.post('http://localhost:5000/api/users/remove-account', body, config);
+                const response = await axios.post('http://localhost:5001/api/users/remove-account', body, config);
                 setMessage(response.data.msg);
                 
             } catch (err) {

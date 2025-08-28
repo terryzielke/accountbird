@@ -86,7 +86,7 @@ const AdminAccountSettings = ({ account, onLogout }) => {
         setError('');
         try {
             const body = { status: formData.status };
-            const response = await axios.put(`http://localhost:5000/api/admin/accounts/${accountData._id}/status`, body, config);
+            const response = await axios.put(`http://localhost:5001/api/admin/accounts/${accountData._id}/status`, body, config);
             
             // Update the local state with the new status
             setAccountData(prevData => ({ ...prevData, status: formData.status }));

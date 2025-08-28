@@ -88,16 +88,18 @@ router.post('/users', auth(), async (req, res) => {
         // 2. Append the additional message and link to the WYSIWYG content
         const appendedHtml = `
             ${finalHtml}
-            <p>If you did not authorize this action, please click the button below to have your user removed.</p>
-            <a href="${siteDomain}/remove-account?token=${removalToken}" style="
-                background-color: #FF4E4E; 
-                color: white; 
-                padding: 10px 20px; 
-                text-decoration: none; 
-                border-radius: 5px; 
-                display: inline-block;
-            ">Remove My User</a>
-            <p>The ${siteName} Team</p>
+            <div style="margin-top: 20px; padding: 10px; border: 1px solid #ccc; background-color: #f9f9f9;">
+                <p>If you did not authorize this action, please click the button below to have your user removed.</p>
+                <a href="${siteDomain}/remove-account?token=${removalToken}" style="
+                    background-color: #FF4E4E; 
+                    color: white; 
+                    padding: 10px 20px; 
+                    text-decoration: none; 
+                    border-radius: 5px; 
+                    display: inline-block;
+                ">Remove My User</a>
+                <p>The ${siteName} Team</p>
+            </div>
         `;
 
         const subject = `You have been added to an account on ${siteName}`;

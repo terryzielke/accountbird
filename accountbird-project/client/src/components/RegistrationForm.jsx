@@ -26,7 +26,7 @@ const RegistrationForm = () => {
     // Fetch subscription types from the back end
     const fetchSubscriptionTypes = useCallback(async () => {
         try {
-            // Note: The port is changed to 5000 to match your server configuration.
+            // Note: The port is changed to 5001 to match your server configuration.
             const response = await axios.get('http://localhost:5001/api/users/subscription-types');
             setSubscriptionTypes(response.data || []);
             
