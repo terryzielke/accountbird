@@ -17,17 +17,29 @@ const Settings = require('../models/Settings');
  * @access  Public
  */
 router.post('/register', async (req, res) => {
-    const { firstName, lastName, email, password, accountType } = req.body;
+    const { firstName, lastName, email, password, accountType, userName } = req.body;
 
     // Input validation
-    if (!firstName || !lastName || !email || !password || !accountType) {
+    if (!firstName || !lastName || !email || !password || !accountType || !userName) {
         return res.status(400).json({ msg: 'Please enter all fields.' });
     }
 
+    // Validate userName format using a regular expression
+    const userNameRegex = /^[a-zA-Z0-9_-]+$/;
+    if (!userNameRegex.test(userName)) {
+        return res.status(400).json({ msg: 'Username can only contain letters, numbers, dashes, and underscores.' });
+    }
+
     try {
+        // Check if a user with the same userName already exists
+        let userNameExists = await User.findOne({ userName });
+        if (userNameExists) {
+            return res.status(400).json({ msg: 'User with that username already exists.' });
+        }
+
         // Check if a user with the same email already exists
-        let userExists = await User.findOne({ email });
-        if (userExists) {
+        let userEmailExists = await User.findOne({ email });
+        if (userEmailExists) {
             return res.status(400).json({ msg: 'User with that email already exists.' });
         }
 
@@ -48,6 +60,7 @@ router.post('/register', async (req, res) => {
             accountId: savedAccount.id,
             firstName,
             lastName,
+            userName,
             email,
             password: hashedPassword,
             role: 'primary_user', // The first user is always the primary user for the account
@@ -67,13 +80,13 @@ router.post('/register', async (req, res) => {
             process.env.JWT_SECRET,
             { expiresIn: '1d' } // Token expires in 1 day
         );
-        
+        // get settings
+        const settings = await Settings.findOne();
         // Create the email removal link
         const siteDomain = settings.siteDomain || 'http://localhost:3000';
         const removalLink = `${siteDomain}/remove-account?token=${removalToken}`;
 
         // Fetch the email template from the database
-        const settings = await Settings.findOne();
         const siteName = settings.siteName || 'AccountBird';
         const emailTemplate = settings.emailTemplates.registrationEmail || '';
         
@@ -83,9 +96,31 @@ router.post('/register', async (req, res) => {
             .replace(/{{lastName}}/g, savedUser.lastName)
             .replace(/{{email}}/g, savedUser.email);
             
+        // Append the additional message and link to the WYSIWYG content
+        const appendedHtml = `
+            <div style="width: 100%; text-align: center; margin-bottom: 20px;padding: 50px 0;">
+                <div style="margin: auto; width: 80%; max-width: 600px; font-family: Arial, sans-serif; color: #333; text-align: left;">
+                    <h3 style="margin: 0 10px;">${siteName}</h3>
+                    <div style="margin-top: 20px; padding: 10px; border: 1px solid #eee; border-radius: 5px; background-color: #fff;">
+                    ${finalHtml}
+                        <p style="margin-top: 20px; border-top: 1px solid #eee; padding-top: 20px;">If you did not authorize this action, please click the button below to have your user removed.</p>
+                        <a href="${siteDomain}/remove-account?token=${removalToken}" style="
+                            background-color: #FF4E4E; 
+                            color: white; 
+                            padding: 10px 20px; 
+                            text-decoration: none; 
+                            border-radius: 5px; 
+                            display: inline-block;
+                        ">Remove My User</a>
+                        <p>The ${siteName} Team</p>
+                    </div>
+                </div>
+            </div>
+        `;
+            
         // Send the notification email
         const subject = `Welcome to ${siteName}!`;
-        await sendEmail(savedUser.email, subject, finalHtml);
+        await sendEmail(savedUser.email, subject, appendedHtml);
 
         // Create and sign JWT for automatic login
         const payload = {

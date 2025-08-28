@@ -219,10 +219,24 @@ router.put('/accounts/:accountId', auth(['admin']), async (req, res) => {
                 const finalHtml = emailTemplate
                     .replace(/{{firstName}}/g, primaryUser.firstName)
                     .replace(/{{subscriptionType}}/g, updatedAccount.accountType);
+                    
+                // Append the additional message and link to the WYSIWYG content
+                const appendedHtml = `
+                    <div style="width: 100%; text-align: center; margin-bottom: 20px;padding: 50px 0;">
+                        <div style="margin: auto; width: 80%; max-width: 600px; font-family: Arial, sans-serif; color: #333; text-align: left;">
+                            <h3 style="margin: 0 10px;">${siteName}</h3>
+                            <div style="margin-top: 20px; padding: 10px; border: 1px solid #eee; border-radius: 5px; background-color: #fff;">
+                            ${finalHtml}
+                                <p style="margin-top: 20px; border-top: 1px solid #eee; padding-top: 20px;">If this change was not intentional, login, revert the changes, and update your account password for security.</p>
+                                <p>The ${siteName} Team</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
                 
                 const subject = `Your ${siteName} Subscription Has Changed`;
 
-                await sendEmail(primaryUser.email, subject, finalHtml);
+                await sendEmail(primaryUser.email, subject, appendedHtml);
             }
         }
 
@@ -274,19 +288,26 @@ router.delete('/accounts/:accountId', auth(['admin']), async (req, res) => {
         if (primaryUser) {
             const subject = `Your ${siteName} Account Has Been Deleted`;
             const htmlContent = `
-                <h2>Hello, ${primaryUser.firstName}!</h2>
-                <p>Your account with ${siteName} has been <strong>deleted</strong> by the administrator team.</p>
-                <p>Deletion is a permanent action, and all associated data has been removed from our system.</p>
-                <p>Likely reasons for deletion:</p>
-                <ul>
-                    <li>Violation of terms of service</li>
-                    <li>Request by account owner</li>
-                    <li>Long standing inactivity</li>
-                </ul>
-                <p>If you believe this was a mistake or have any questions, please contact our support team.</p>
-                <p>Thank you for being a part of ${siteName}!</p>
-                <p>Best regards,</p>
-                <p>The ${siteName} Team</p>
+                <div style="width: 100%; text-align: center; margin-bottom: 20px;padding: 50px 0;">
+                    <div style="margin: auto; width: 80%; max-width: 600px; font-family: Arial, sans-serif; color: #333; text-align: left;">
+                        <h3 style="margin: 0 10px;">${siteName}</h3>
+                        <div style="margin-top: 20px; padding: 10px; border: 1px solid #eee; border-radius: 5px; background-color: #fff;">
+                            <h2>Hello, ${primaryUser.firstName}!</h2>
+                            <p>Your account with ${siteName} has been <strong>deleted</strong> by the administrator team.</p>
+                            <p>Deletion is a permanent action, and all associated data has been removed from our system.</p>
+                            <p>Likely reasons for deletion:</p>
+                            <ul>
+                                <li>Violation of terms of service</li>
+                                <li>Request by account owner</li>
+                                <li>Long standing inactivity</li>
+                            </ul>
+                            <p>If you believe this was a mistake or have any questions, please contact our support team.</p>
+                            <p>Thank you for being a part of ${siteName}!</p>
+                            <p>Best regards,</p>
+                            <p>The ${siteName} Team</p>
+                        </div>
+                    </div>
+                </div>
             `;
             await sendEmail(primaryUser.email, subject, htmlContent);
         } else {
@@ -325,18 +346,33 @@ router.get('/users/:userId', auth(['admin']), async (req, res) => {
  * @access  Private (Admin only)
  */
 router.put('/users/:userId', auth(['admin']), async (req, res) => {
-    const { firstName, lastName, email, role } = req.body;
+    const { firstName, lastName, userName, email, role } = req.body;
     const userFields = {};
     if (firstName) userFields.firstName = firstName;
     if (lastName) userFields.lastName = lastName;
+    if (userName) userFields.userName = userName;
     if (email) userFields.email = email;
     if (role) userFields.role = role;
+    
+    // Validate userName format using a regular expression
+    const userNameRegex = /^[a-zA-Z0-9_-]+$/;
+    if (!userNameRegex.test(userName)) {
+        return res.status(400).json({ msg: 'Username can only contain letters, numbers, dashes, and underscores.' });
+    }
 
     try {
         let user = await User.findById(req.params.userId);
 
         if (!user) {
             return res.status(404).json({ msg: 'User not found' });
+        }
+
+        // Check if the userName is already in use
+        if (userName && userName !== user.userName) {
+            const existingUser = await User.findOne({ userName });
+            if (existingUser) {
+                return res.status(400).json({ msg: 'Username already in use.' });
+            }
         }
 
         // Check if a user with the new email already exists
@@ -456,7 +492,7 @@ router.delete('/users/:userId', auth(['admin']), async (req, res) => {
         
         // 1. Email to the deleted user (dynamic content from Wysiwyg)
         const emailTemplate = settings.emailTemplates.userRemovedFromAccount || '';
-        const removedUserHtml = emailTemplate
+        const finalHtml = emailTemplate
             .replace(/{{firstName}}/g, userToDelete.firstName)
             .replace(/{{lastName}}/g, userToDelete.lastName)
             .replace(/{{email}}/g, userToDelete.email)
@@ -486,11 +522,18 @@ router.delete('/users/:userId', auth(['admin']), async (req, res) => {
             if (primaryUser) {
                 const primaryUserSubject = `A user has been removed from your ${siteName} account`;
                 const primaryUserHtml = `
-                    <h2>Hello, ${primaryUser.firstName}!</h2>
-                    <p>A user, **${userToDelete.firstName} ${userToDelete.lastName}** (${userToDelete.email}), has been removed from your account by an administrator.</p>
-                    <p>If you have any questions, please contact our support team.</p>
-                    <p>Best regards,</p>
-                    <p>The ${siteName} Team</p>
+                <div style="width: 100%; text-align: center; margin-bottom: 20px;padding: 50px 0;">
+                    <div style="margin: auto; width: 80%; max-width: 600px; font-family: Arial, sans-serif; color: #333; text-align: left;">
+                        <h3 style="margin: 0 10px;">${siteName}</h3>
+                        <div style="margin-top: 20px; padding: 10px; border: 1px solid #eee; border-radius: 5px; background-color: #fff;">
+                            <h2>Hello, ${primaryUser.firstName}!</h2>
+                            <p>A user, **${userToDelete.firstName} ${userToDelete.lastName}** (${userToDelete.email}), has been removed from your account by an administrator.</p>
+                            <p>If you have any questions, please contact our support team.</p>
+                            <p>Best regards,</p>
+                            <p>The ${siteName} Team</p>
+                        </div>
+                    </div>
+                </div>
                 `;
                 
                 await sendEmail(primaryUser.email, primaryUserSubject, primaryUserHtml);
@@ -525,16 +568,28 @@ router.get('/accounts/:accountId/users', auth(['admin']), async (req, res) => {
  * @access  Private (Admin only)
  */
 router.post('/accounts/:accountId/users', auth(['admin']), async (req, res) => {
-    const { firstName, lastName, email, password } = req.body;
+    const { firstName, lastName, email, password, userName } = req.body;
     const { accountId } = req.params;
 
-    if (!firstName || !lastName || !email || !password || !accountId) {
+    if (!firstName || !lastName || !email || !password || !accountId || !userName) {
         return res.status(400).json({ msg: 'Please enter all fields.' });
+    }
+    
+    // Validate userName format using a regular expression
+    const userNameRegex = /^[a-zA-Z0-9_-]+$/;
+    if (!userNameRegex.test(userName)) {
+        return res.status(400).json({ msg: 'Username can only contain letters, numbers, dashes, and underscores.' });
     }
 
     try {
-        let userExists = await User.findOne({ email });
-        if (userExists) {
+        // check for existing userName
+        let userNameExists = await User.findOne({ userName });
+        if (userNameExists) {
+            return res.status(400).json({ msg: 'User with that username already exists.'});
+        }
+        // check for existing Email
+        let userEmailExists = await User.findOne({ email });
+        if (userEmailExists) {
             return res.status(400).json({ msg: 'User with that email already exists.' });
         }
 
@@ -545,6 +600,7 @@ router.post('/accounts/:accountId/users', auth(['admin']), async (req, res) => {
             accountId: accountId,
             firstName,
             lastName,
+            userName,
             email,
             password: hashedPassword,
             role: 'user',
@@ -568,12 +624,14 @@ router.post('/accounts/:accountId/users', auth(['admin']), async (req, res) => {
             if (primaryUser) {
                 const settings = await Settings.findOne();
                 const siteName = settings.siteName || 'AccountBird';
+                const siteDomain = settings.siteDomain || 'http://localhost:3000';
                 const emailTemplate = settings.emailTemplates.userAddedToAccount || '';
 
                 // 1. Email to the newly added user (dynamic content)
                 const finalHtml = emailTemplate
                     .replace(/{{firstName}}/g, savedUser.firstName)
                     .replace(/{{lastName}}/g, savedUser.lastName)
+                    .replace(/{{userName}}/g, savedUser.userName)
                     .replace(/{{siteName}}/g, siteName)
                     .replace(/{{email}}/g, savedUser.email);
             
@@ -607,11 +665,18 @@ router.post('/accounts/:accountId/users', auth(['admin']), async (req, res) => {
                 // 2. Email to the Primary User (static content with dynamic user details)
                 const primaryUserSubject = `A new user has been added to your ${siteName} account`;
                 const primaryUserHtml = `
-                    <h2>Hello, ${primaryUser.firstName}!</h2>
-                    <p>A new user, **${savedUser.firstName} ${savedUser.lastName}** (${savedUser.email}), has been added to your account by an administrator.</p>
-                    <p>If you did not authorize this change, please contact our support team immediately.</p>
-                    <p>Best regards,</p>
-                    <p>The ${siteName} Team</p>
+                <div style="width: 100%; text-align: center; margin-bottom: 20px;padding: 50px 0;">
+                    <div style="margin: auto; width: 80%; max-width: 600px; font-family: Arial, sans-serif; color: #333; text-align: left;">
+                        <h3 style="margin: 0 10px;">${siteName}</h3>
+                        <div style="margin-top: 20px; padding: 10px; border: 1px solid #eee; border-radius: 5px; background-color: #fff;">
+                            <h2>Hello, ${primaryUser.firstName}!</h2>
+                            <p>A new user, **${savedUser.firstName} ${savedUser.lastName}** (${savedUser.email}), has been added to your account by an administrator.</p>
+                            <p>If you did not authorize this change, please contact our support team immediately.</p>
+                            <p>Best regards,</p>
+                            <p>The ${siteName} Team</p>
+                        </div>
+                    </div>
+                </div>
                 `;
                 
                 await sendEmail(primaryUser.email, primaryUserSubject, primaryUserHtml);
@@ -633,19 +698,24 @@ router.post('/accounts/:accountId/users', auth(['admin']), async (req, res) => {
  * @access  Private (Admin only)
  */
 router.post('/accounts', auth(['admin']), async (req, res) => {
-    const { firstName, lastName, email, password, accountTypeId } = req.body;
+    const { firstName, lastName, email, password, accountTypeId, userName } = req.body;
 
-    if (!firstName || !lastName || !email || !password || !accountTypeId) {
+    if (!firstName || !lastName || !email || !password || !accountTypeId || !userName) {
         return res.status(400).json({ msg: 'Please enter all fields.' });
     }
 
     try {
-        let userExists = await User.findOne({ email });
-        if (userExists) {
+        let userNameExists = await User.findOne({ userName });
+        if (userNameExists) {
+            return res.status(400).json({ msg: 'User with that username already exists.' });
+        }
+        // find existing Email
+        let userEmailExists = await User.findOne({ email });
+        if (userEmailExists) {
             return res.status(400).json({ msg: 'User with that email already exists.' });
         }
 
-        const salt = await bcrypt.genGenSalt(10);
+        const salt = await bcrypt.genSalt(10); // Corrected function name
         const hashedPassword = await bcrypt.hash(password, salt);
 
         const newAccount = new Account({ accountType: accountTypeId });
@@ -655,6 +725,7 @@ router.post('/accounts', auth(['admin']), async (req, res) => {
             accountId: savedAccount.id,
             firstName,
             lastName,
+            userName,
             email,
             password: hashedPassword,
             role: 'primary_user',

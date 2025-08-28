@@ -7,14 +7,12 @@ import Sidebar from './Sidebar';
 import UserDashboard from './UserDashboard';
 import UserProfile from './UserProfile';
 import PrimaryUserManageUsers from './PrimaryUserManageUsers';
-//import PrimaryUserAccountSettingsLayout from './PrimaryUserAccountSettingsLayout';
-
 // Settings components
 import PrimaryUserGeneralSettings from './PrimaryUserGeneralSettings';
 import PrimaryUserSubscriptionType from './PrimaryUserSubscriptionType';
 import PrimaryUserBillingAndPayments from './PrimaryUserBillingAndPayments';
 
-const UserLayout = ({ user, onLogout }) => {
+const UserLayout = ({ user, onLogout, onUserUpdate }) => {
     return (
         <Router>
             <div className="layout-container">
@@ -25,9 +23,8 @@ const UserLayout = ({ user, onLogout }) => {
                         <Routes>
                             <Route path="/" element={<Navigate to="/dashboard" />} />
                             <Route path="/dashboard" element={<UserDashboard user={user} onLogout={onLogout} />} />
-                            <Route path="/profile" element={<UserProfile user={user} onLogout={onLogout} />} />
+                            <Route path="/profile" element={<UserProfile user={user} onLogout={onLogout} onUserUpdate={onUserUpdate} />} />
                             <Route path="/users" element={<PrimaryUserManageUsers user={user} onLogout={onLogout} />} />
-                            {/*<Route path="/settings/*" element={<PrimaryUserAccountSettingsLayout user={user} onLogout={onLogout} />} />*/}
                             <Route path="/settings/general" element={<PrimaryUserGeneralSettings user={user} onLogout={onLogout} />} />
                             <Route path="/settings/subscription" element={<PrimaryUserSubscriptionType user={user} onLogout={onLogout} />} />
                             <Route path="/settings/billing" element={<PrimaryUserBillingAndPayments user={user} onLogout={onLogout} />} />

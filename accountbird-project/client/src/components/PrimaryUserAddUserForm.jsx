@@ -7,6 +7,7 @@ const PrimaryUserAddUserForm = ({ onUserAdded, onBack, onLogout }) => {
     const [addUserData, setAddUserData] = useState({
         firstName: '',
         lastName: '',
+        userName: '',
         email: '',
         password: '',
         role: 'user',
@@ -56,6 +57,10 @@ const PrimaryUserAddUserForm = ({ onUserAdded, onBack, onLogout }) => {
                 <div className="form-group">
                     <label htmlFor="lastName">Last Name</label>
                     <input type="text" id="lastName" name="lastName" value={addUserData.lastName} onChange={handleAddUserChange} required />
+                </div>
+                <div className="form-group">
+                    <label htmlFor="userName">Username</label>
+                    <input type="text" id="userName" name="userName" value={addUserData.userName} onChange={handleAddUserChange} required />
                 </div>
                 <div className="form-group">
                     <label htmlFor="email">Email Address</label>

@@ -12,6 +12,7 @@ const RegistrationForm = () => {
     const [formData, setFormData] = useState({
         firstName: '',
         lastName: '',
+        userName: '',
         email: '',
         password: '',
         accountType: '', // Default to subscriber
@@ -21,7 +22,7 @@ const RegistrationForm = () => {
     const [message, setMessage] = useState('');
     const [error, setError] = useState('');
 
-    const { firstName, lastName, email, password, accountType } = formData;
+    const { firstName, lastName, userName, email, password, accountType } = formData;
 
     // Fetch subscription types from the back end
     const fetchSubscriptionTypes = useCallback(async () => {
@@ -122,6 +123,10 @@ const RegistrationForm = () => {
                     <div className="form-group">
                         <label htmlFor="lastName">Last Name</label>
                         <input type="text" id="lastName" name="lastName" value={lastName} onChange={handleChange} required />
+                    </div>
+                    <div className="form-group">
+                        <label htmlFor="userName">Username</label>
+                        <input type="text" id="userName" name="userName" value={userName} onChange={handleChange} required />
                     </div>
                     <div className="form-group">
                         <label htmlFor="email">Email Address</label>

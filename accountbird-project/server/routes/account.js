@@ -34,7 +34,7 @@ router.get('/users', auth(), async (req, res) => {
  * @access  Private (Primary User only)
  */
 router.post('/users', auth(), async (req, res) => {
-    const { firstName, lastName, email, role, password } = req.body;
+    const { firstName, lastName, email, role, password, userName } = req.body;
     const { accountId } = req.user;
 
     const account = await Account.findById(accountId);
@@ -42,13 +42,25 @@ router.post('/users', auth(), async (req, res) => {
         return res.status(403).json({ msg: 'Access denied: You are not the primary user for this account' });
     }
 
-    if (!firstName || !lastName || !email || !role || !password) {
+    if (!firstName || !lastName || !email || !role || !password || !userName) {
         return res.status(400).json({ msg: 'Please enter all fields.' });
+    }
+    
+    // Validate userName format using a regular expression
+    const userNameRegex = /^[a-zA-Z0-9_-]+$/;
+    if (!userNameRegex.test(userName)) {
+        return res.status(400).json({ msg: 'Username can only contain letters, numbers, dashes, and underscores.' });
     }
 
     try {
-        let userExists = await User.findOne({ email });
-        if (userExists) {
+        // check for existing userName
+        let userUserNameExists = await User.findOne({ userName });
+        if (userUserNameExists) {
+            return res.status(400).json({ msg: 'User with that username already exists.' });
+        }
+        // check for existing email
+        let userEmailExists = await User.findOne({ email });
+        if (userEmailExists) {
             return res.status(400).json({ msg: 'User with that email already exists.' });
         }
 
@@ -59,6 +71,7 @@ router.post('/users', auth(), async (req, res) => {
             accountId: accountId,
             firstName,
             lastName,
+            userName,
             email,
             password: hashedPassword,
             role,
@@ -84,6 +97,7 @@ router.post('/users', auth(), async (req, res) => {
         const finalHtml = emailTemplate
             .replace(/{{firstName}}/g, savedUser.firstName)
             .replace(/{{lastName}}/g, savedUser.lastName)
+            .replace(/{{userName}}/g, savedUser.userName)
             .replace(/{{newUserEmail}}/g, savedUser.email)
             .replace(/{{siteName}}/g, siteName);
             
@@ -130,14 +144,21 @@ router.post('/users', auth(), async (req, res) => {
  * @access  Private (Primary User only)
  */
 router.put('/users/:userId', auth(), async (req, res) => {
-    const { firstName, lastName, email, role } = req.body;
+    const { firstName, lastName, userName, email, role } = req.body;
     const { accountId, id } = req.user;
 
     const userFields = {};
     if (firstName) userFields.firstName = firstName;
     if (lastName) userFields.lastName = lastName;
+    if (userName) userFields.userName = userName;
     if (email) userFields.email = email;
     if (role) userFields.role = role;
+    
+    // Validate userName format using a regular expression
+    const userNameRegex = /^[a-zA-Z0-9_-]+$/;
+    if (!userNameRegex.test(userName)) {
+        return res.status(400).json({ msg: 'Username can only contain letters, numbers, dashes, and underscores.' });
+    }
 
     try {
         const userToUpdate = await User.findById(req.params.userId);
@@ -154,6 +175,13 @@ router.put('/users/:userId', auth(), async (req, res) => {
         // Prevent primary user from changing their own role
         if (String(userToUpdate.id) === String(id) && userFields.role) {
             return res.status(403).json({ msg: 'Access denied: Cannot change your own role' });
+        }
+
+        // Check for uniqueness of email and userName if they are being updated
+        if (userName && userName !== userToUpdate.userName) {
+            const existingUser = await User.findOne({ userName });
+            if (existingUser) {return res.status(400).json({ msg: 'Username already in use.' });
+            }
         }
 
         if (email && email !== userToUpdate.email) {

@@ -53,6 +53,11 @@ function App() {
         setUser(userData);
     };
 
+    const handleUserUpdate = (updatedUserData) => {
+        setUser(updatedUserData);
+        localStorage.setItem('user', JSON.stringify(updatedUserData));
+    };
+
     if (loading) {
         return <div className="loading-container">Loading...</div>;
     }
@@ -63,9 +68,9 @@ function App() {
 
     if (user) {
         if (user.role === 'admin') {
-            return <AdminLayout user={user} onLogout={handleLogout} />;
+            return <AdminLayout user={user} onLogout={handleLogout} onUserUpdate={handleUserUpdate} />;
         } else {
-            return <UserLayout user={user} onLogout={handleLogout} />;
+            return <UserLayout user={user} onLogout={handleLogout} onUserUpdate={handleUserUpdate} />;
         }
     }
 

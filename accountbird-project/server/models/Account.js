@@ -8,7 +8,7 @@ const AccountSchema = new mongoose.Schema({
     },
     accountType: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'Settings.subscriptionTypes', // Corrected reference
+        ref: 'Settings',
         required: true,
     },
     billingInfo: {

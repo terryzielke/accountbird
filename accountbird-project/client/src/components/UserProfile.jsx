@@ -3,14 +3,8 @@ import React, { useState, useMemo } from 'react';
 import axios from 'axios';
 import './UserProfile.css';
 
-const UserProfile = ({ user, onLogout }) => {
+const UserProfile = ({ user, onLogout, onUserUpdate }) => {
     const [userData, setUserData] = useState(user);
-    const [profileFormData, setProfileFormData] = useState({
-        firstName: user.firstName || '',
-        lastName: user.lastName || '',
-        userName: user.userName || '',
-        email: user.email || '',
-    });
     const [passwordFormData, setPasswordFormData] = useState({
         oldPassword: '',
         newPassword: '',
@@ -27,7 +21,7 @@ const UserProfile = ({ user, onLogout }) => {
     }), [token]);
 
     const handleProfileChange = (e) => {
-        setProfileFormData({ ...profileFormData, [e.target.name]: e.target.value });
+        setUserData({ ...userData, [e.target.name]: e.target.value });
     };
 
     const handlePasswordChange = (e) => {
@@ -40,9 +34,11 @@ const UserProfile = ({ user, onLogout }) => {
         setError('');
 
         try {
-            const response = await axios.put('http://localhost:5001/api/profile', profileFormData, config);
-            setUserData(response.data);
-            localStorage.setItem('user', JSON.stringify(response.data));
+            const response = await axios.put('http://localhost:5001/api/profile', userData, config);
+            
+            // Call the callback function from the parent
+            onUserUpdate(response.data);
+
             setMessage('Profile updated successfully!');
         } catch (err) {
             setError(err.response?.data?.msg || 'An unexpected error occurred.');
@@ -69,12 +65,12 @@ const UserProfile = ({ user, onLogout }) => {
         }
     };
     
-    const isRegularUser = userData.role !== 'admin';
+    //const isRegularUser = userData.role !== 'admin';
 
     return (
         <div className="content">
             <header className="header">
-                <h2>{userData.role}: {profileFormData.firstName} {profileFormData.lastName}</h2>
+                <h2>{userData.role}: {userData.firstName} {userData.lastName}</h2>
             </header>
 
             {error && <div className="error-message">{error}</div>}
@@ -82,26 +78,21 @@ const UserProfile = ({ user, onLogout }) => {
 
             <h3>Update Profile Information</h3>
             <form onSubmit={handleProfileSubmit}>
-                {isRegularUser ? (
-                    <>
-                        <div className="form-group">
-                            <label htmlFor="firstName">First Name</label>
-                            <input type="text" id="firstName" name="firstName" value={profileFormData.firstName} onChange={handleProfileChange} />
-                        </div>
-                        <div className="form-group">
-                            <label htmlFor="lastName">Last Name</label>
-                            <input type="text" id="lastName" name="lastName" value={profileFormData.lastName} onChange={handleProfileChange} />
-                        </div>
-                    </>
-                ) : (
-                    <div className="form-group">
-                        <label htmlFor="userName">User Name</label>
-                        <input type="text" id="userName" name="userName" value={profileFormData.userName} onChange={handleProfileChange} />
-                    </div>
-                )}
+                <div className="form-group">
+                    <label htmlFor="firstName">First Name</label>
+                    <input type="text" id="firstName" name="firstName" value={userData.firstName} onChange={handleProfileChange} />
+                </div>
+                <div className="form-group">
+                    <label htmlFor="lastName">Last Name</label>
+                    <input type="text" id="lastName" name="lastName" value={userData.lastName} onChange={handleProfileChange} />
+                </div>
+                <div className="form-group">
+                    <label htmlFor="userName">User Name</label>
+                    <input type="text" id="userName" name="userName" value={userData.userName} onChange={handleProfileChange} />
+                </div>
                 <div className="form-group">
                     <label htmlFor="email">Email Address</label>
-                    <input type="email" id="email" name="email" value={profileFormData.email} onChange={handleProfileChange} />
+                    <input type="email" id="email" name="email" value={userData.email} onChange={handleProfileChange} />
                 </div>
                 <button type="submit" className="submit-btn">Update Profile</button>
             </form>

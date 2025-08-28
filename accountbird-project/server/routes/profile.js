@@ -37,49 +37,59 @@ router.get('/', auth(), async (req, res) => {
 
 /**
  * @route   PUT /api/profile
- * @desc    Update the current user's profile
+ * @desc    Update authenticated user's profile
  * @access  Private
  */
 router.put('/', auth(), async (req, res) => {
-    const { id, role } = req.user;
-    const { firstName, lastName, email, userName } = req.body;
-
-    // Build user update object
-    const userFields = {};
-    if (firstName) userFields.firstName = firstName;
-    if (lastName) userFields.lastName = lastName;
-    if (email) userFields.email = email;
-    if (userName) userFields.userName = userName;
+    const { firstName, lastName, userName, email } = req.body;
+    
+    // Validate userName format if it's being updated
+    if (userName) {
+        const userNameRegex = /^[a-zA-Z0-9_-]+$/;
+        if (!userNameRegex.test(userName)) {
+            return res.status(400).json({ msg: 'Username can only contain letters, numbers, dashes, and underscores.' });
+        }
+    }
+    
+    const profileFields = {};
+    if (firstName) profileFields.firstName = firstName;
+    if (lastName) profileFields.lastName = lastName;
+    if (userName) profileFields.userName = userName;
+    if (email) profileFields.email = email;
 
     try {
         let user;
-        if (role === 'admin') {
-            user = await Admin.findById(id);
-            if (userName) userFields.userName = userName;
+        // Check if the authenticated user is an admin or a regular user
+        if (req.user.role === 'admin') {
+            user = await Admin.findById(req.user.id);
         } else {
-            user = await User.findById(id);
-            if (firstName) userFields.firstName = firstName;
-            if (lastName) userFields.lastName = lastName;
+            user = await User.findById(req.user.id);
         }
 
         if (!user) {
             return res.status(404).json({ msg: 'User not found' });
         }
-
-        // Check if a user with the new email already exists
+        
+        // Check for uniqueness of email and userName if they are being updated
         if (email && email !== user.email) {
-            const existingUser = await (role === 'admin' ? Admin : User).findOne({ email });
+            const existingUser = await User.findOne({ email });
             if (existingUser) {
-                return res.status(400).json({ msg: 'Email already in use.' });
+                return res.status(400).json({ msg: 'Email is already in use.' });
             }
-            userFields.email = email;
         }
-
-        // Update the user
-        const updatedUser = await (role === 'admin' ? Admin : User).findByIdAndUpdate(
-            id,
-            { $set: userFields },
-            { new: true } // Return the updated document
+        
+        if (userName && userName !== user.userName) {
+            const existingUser = await User.findOne({ userName });
+            if (existingUser) {
+                return res.status(400).json({ msg: 'Username is already in use.' });
+            }
+        }
+        
+        // Update the user profile
+        let updatedUser = await user.constructor.findByIdAndUpdate(
+            req.user.id,
+            { $set: profileFields },
+            { new: true, runValidators: true }
         ).select('-password');
 
         res.json(updatedUser);

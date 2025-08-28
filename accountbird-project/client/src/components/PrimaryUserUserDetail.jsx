@@ -8,6 +8,7 @@ const PrimaryUserUserDetail = ({ user, onBack, onLogout }) => {
     const [formData, setFormData] = useState({
         firstName: user.firstName,
         lastName: user.lastName,
+        userName: user.userName,
         email: user.email,
         role: user.role,
         status: user.status,
@@ -42,6 +43,7 @@ const PrimaryUserUserDetail = ({ user, onBack, onLogout }) => {
             const body = {
                 firstName: formData.firstName,
                 lastName: formData.lastName,
+                userName: formData.userName,
                 email: formData.email,
                 role: formData.role,
             };
@@ -127,6 +129,10 @@ const PrimaryUserUserDetail = ({ user, onBack, onLogout }) => {
                 <div className="form-group">
                     <label htmlFor="lastName">Last Name</label>
                     <input type="text" id="lastName" name="lastName" value={formData.lastName} onChange={handleChange} />
+                </div>
+                <div className="form-group">
+                    <label htmlFor="userName">Username</label>
+                    <input type="text" id="userName" name="userName" value={formData.userName} onChange={handleChange} />
                 </div>
                 <div className="form-group">
                     <label htmlFor="email">Email Address</label>
