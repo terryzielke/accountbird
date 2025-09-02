@@ -10,7 +10,6 @@ const AdminAccountUsers = ({ accountId, onLogout, usersView, setUsersView }) => 
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [message, setMessage] = useState('');
-    //const [view, setView] = useState('list');
     const [selectedUser, setSelectedUser] = useState(null);
 
     const token = localStorage.getItem('token');
@@ -62,11 +61,18 @@ const AdminAccountUsers = ({ accountId, onLogout, usersView, setUsersView }) => 
         setUsersView('list');
     };
     
-    // New function to handle deletion from the child component
     const handleUserDeleted = () => {
         setMessage('User deleted successfully!');
         setUsersView('list');
         fetchAccountUsers();
+    };
+
+    const handleUserUpdated = (updatedUser) => {
+        // Update the users list with the new data
+        setUsers(users.map(user => user._id === updatedUser._id ? updatedUser : user));
+        // Update the selected user so the form re-renders with the new data
+        setSelectedUser(updatedUser);
+        setMessage('User updated successfully!');
     };
 
     if (loading) {
@@ -78,7 +84,13 @@ const AdminAccountUsers = ({ accountId, onLogout, usersView, setUsersView }) => 
     }
 
     if (usersView === 'detail') {
-        return <UserDetail user={selectedUser} onBack={handleBackClick} onLogout={onLogout} onUserDeleted={handleUserDeleted} />;
+        return <UserDetail 
+            user={selectedUser} 
+            onBack={handleBackClick} 
+            onLogout={onLogout} 
+            onUserDeleted={handleUserDeleted}
+            onUserUpdated={handleUserUpdated}
+        />;
     }
 
     if (usersView === 'add') {

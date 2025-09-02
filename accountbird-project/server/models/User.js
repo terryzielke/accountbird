@@ -46,6 +46,34 @@ const UserSchema = new mongoose.Schema({
         type: Date,
         default: Date.now,
     },
+    location: {
+        address: {
+            type: String,
+            trim: true
+        },
+        city: {
+            type: String,
+            trim: true
+        },
+        stateProvince: {
+            type: String,
+            trim: true
+        },
+        country: {
+            type: String,
+            enum: ['Canada', 'USA'],
+            trim: true
+        },
+        zipPostalCode: {
+            type: String,
+            trim: true
+        }
+    },
+    userBio: {
+        type: String,
+        trim: true,
+        default: ''
+    }
 });
 
 module.exports = mongoose.model('User', UserSchema);

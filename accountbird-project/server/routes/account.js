@@ -140,24 +140,25 @@ router.post('/users', auth(), async (req, res) => {
 
 /**
  * @route   PUT /api/account/users/:userId
- * @desc    Primary user updates a user's details
+ * @desc    Primary user updates a user's details, including bio and location
  * @access  Private (Primary User only)
  */
 router.put('/users/:userId', auth(), async (req, res) => {
-    const { firstName, lastName, userName, email, role } = req.body;
+    // Destructure all fields from the request body, including the new userBio.
+    const { firstName, lastName, userName, email, role, location, userBio } = req.body;
     const { accountId, id } = req.user;
 
-    const userFields = {};
-    if (firstName) userFields.firstName = firstName;
-    if (lastName) userFields.lastName = lastName;
-    if (userName) userFields.userName = userName;
-    if (email) userFields.email = email;
-    if (role) userFields.role = role;
+    // 1. Provide a more descriptive error for an empty userName field.
+    if (userName === '') {
+        return res.status(400).json({ msg: 'Username cannot be empty.' });
+    }
     
     // Validate userName format using a regular expression
-    const userNameRegex = /^[a-zA-Z0-9_-]+$/;
-    if (!userNameRegex.test(userName)) {
-        return res.status(400).json({ msg: 'Username can only contain letters, numbers, dashes, and underscores.' });
+    if (userName) {
+        const userNameRegex = /^[a-zA-Z0-9_-]+$/;
+        if (!userNameRegex.test(userName)) {
+            return res.status(400).json({ msg: 'Username can only contain letters, numbers, dashes, and underscores.' });
+        }
     }
 
     try {
@@ -172,15 +173,16 @@ router.put('/users/:userId', auth(), async (req, res) => {
             return res.status(403).json({ msg: 'Access denied: You can only manage users on your own account' });
         }
 
-        // Prevent primary user from changing their own role
-        if (String(userToUpdate.id) === String(id) && userFields.role) {
+        // Prevent a primary user from changing their own role
+        if (String(userToUpdate.id) === String(id) && req.body.role) {
             return res.status(403).json({ msg: 'Access denied: Cannot change your own role' });
         }
 
         // Check for uniqueness of email and userName if they are being updated
         if (userName && userName !== userToUpdate.userName) {
             const existingUser = await User.findOne({ userName });
-            if (existingUser) {return res.status(400).json({ msg: 'Username already in use.' });
+            if (existingUser) {
+                return res.status(400).json({ msg: 'Username already in use.' });
             }
         }
 
@@ -190,13 +192,34 @@ router.put('/users/:userId', auth(), async (req, res) => {
                 return res.status(400).json({ msg: 'Email already in use.' });
             }
         }
+        
+        // Apply updates directly to the user object
+        if (firstName) userToUpdate.firstName = firstName;
+        if (lastName) userToUpdate.lastName = lastName;
+        if (userName) userToUpdate.userName = userName;
+        if (email) userToUpdate.email = email;
+        if (role) userToUpdate.role = role;
+        
+        // Handle the new userBio field
+        if (typeof userBio === 'string') {
+            userToUpdate.userBio = userBio;
+        }
 
-        const updatedUser = await User.findByIdAndUpdate(
-            req.params.userId,
-            { $set: userFields },
-            { new: true }
-        ).select('-password');
+        // Conditionally apply the location update only if it exists in the request body
+        if (location && typeof location === 'object' && Object.keys(location).length > 0) {
+            userToUpdate.location = {
+                ...userToUpdate.location,
+                ...location
+            };
+        } else if (location && Object.keys(location).length === 0) {
+            // Explicitly set location to an empty object if an empty object is sent
+            // This allows the user to clear all location fields
+            userToUpdate.location = {};
+        }
 
+        await userToUpdate.save();
+
+        const updatedUser = await User.findById(req.params.userId).select('-password');
         res.json(updatedUser);
     } catch (err) {
         console.error(err.message);

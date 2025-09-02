@@ -10,18 +10,20 @@ const Admin = require('../models/Admin');
 
 /**
  * @route   GET /api/profile
- * @desc    Get the current user's profile
+ * @desc    Get the current authenticated user's profile
  * @access  Private
  */
 router.get('/', auth(), async (req, res) => {
     try {
-        const { id, role } = req.user;
-
         let user;
-        if (role === 'admin') {
-            user = await Admin.findById(id).select('-password');
+        const userId = req.user.id;
+        const userRole = req.user.role;
+
+        // Find the user based on their role
+        if (userRole === 'admin') {
+            user = await Admin.findById(userId).select('-password');
         } else {
-            user = await User.findById(id).select('-password');
+            user = await User.findById(userId).select('-password');
         }
 
         if (!user) {
@@ -41,7 +43,8 @@ router.get('/', auth(), async (req, res) => {
  * @access  Private
  */
 router.put('/', auth(), async (req, res) => {
-    const { firstName, lastName, userName, email } = req.body;
+    // Destructure all fields, including the nested location object.
+    const { firstName, lastName, userName, email, userBio, location } = req.body;
     
     // Validate userName format if it's being updated
     if (userName) {
@@ -50,20 +53,17 @@ router.put('/', auth(), async (req, res) => {
             return res.status(400).json({ msg: 'Username can only contain letters, numbers, dashes, and underscores.' });
         }
     }
-    
-    const profileFields = {};
-    if (firstName) profileFields.firstName = firstName;
-    if (lastName) profileFields.lastName = lastName;
-    if (userName) profileFields.userName = userName;
-    if (email) profileFields.email = email;
 
     try {
         let user;
-        // Check if the authenticated user is an admin or a regular user
-        if (req.user.role === 'admin') {
-            user = await Admin.findById(req.user.id);
+        const userId = req.user.id;
+        const userRole = req.user.role;
+
+        // Check user's role to determine which model to use
+        if (userRole === 'admin') {
+            user = await Admin.findById(userId);
         } else {
-            user = await User.findById(req.user.id);
+            user = await User.findById(userId);
         }
 
         if (!user) {
@@ -85,12 +85,30 @@ router.put('/', auth(), async (req, res) => {
             }
         }
         
-        // Update the user profile
-        let updatedUser = await user.constructor.findByIdAndUpdate(
-            req.user.id,
-            { $set: profileFields },
-            { new: true, runValidators: true }
-        ).select('-password');
+        // Update fields directly on the user object to handle partial updates correctly.
+        if (firstName) user.firstName = firstName;
+        if (lastName) user.lastName = lastName;
+        if (userName) user.userName = userName;
+        if (email) user.email = email;
+
+        // Handle userBio field
+        if (typeof userBio === 'string') {
+            user.userBio = userBio;
+        }
+
+        // Handle the nested location object
+        if (location && typeof location === 'object') {
+            user.location = {
+                ...user.location, // Spread existing location data
+                ...location       // Overwrite with new data from the request body
+            };
+        }
+
+        // Save the updated user document
+        await user.save();
+        
+        // Retrieve the updated user, excluding the password
+        const updatedUser = await user.constructor.findById(userId).select('-password');
 
         res.json(updatedUser);
     } catch (err) {

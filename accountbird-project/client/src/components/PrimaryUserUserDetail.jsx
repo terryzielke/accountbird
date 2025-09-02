@@ -1,18 +1,101 @@
 // client/src/components/PrimaryUserUserDetail.jsx
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import axios from 'axios';
+import { EditorState, convertToRaw, convertFromRaw } from 'draft-js';
+import { Editor } from 'react-draft-wysiwyg';
+import 'react-draft-wysiwyg/dist/react-draft-wysiwyg.css';
 import './PrimaryUserUserDetail.css';
+
+// State and Province Data - for dynamic dropdowns
+const states = [
+    { value: 'AL', label: 'Alabama' },
+    { value: 'AK', label: 'Alaska' },
+    { value: 'AZ', label: 'Arizona' },
+    { value: 'AR', label: 'Arkansas' },
+    { value: 'CA', label: 'California' },
+    { value: 'CO', label: 'Colorado' },
+    { value: 'CT', label: 'Connecticut' },
+    { value: 'DE', label: 'Delaware' },
+    { value: 'FL', label: 'Florida' },
+    { value: 'GA', label: 'Georgia' },
+    { value: 'HI', label: 'Hawaii' },
+    { value: 'ID', label: 'Idaho' },
+    { value: 'IL', label: 'Illinois' },
+    { value: 'IN', label: 'Indiana' },
+    { value: 'IA', label: 'Iowa' },
+    { value: 'KS', label: 'Kansas' },
+    { value: 'KY', label: 'Kentucky' },
+    { value: 'LA', label: 'Louisiana' },
+    { value: 'ME', label: 'Maine' },
+    { value: 'MD', label: 'Maryland' },
+    { value: 'MA', label: 'Massachusetts' },
+    { value: 'MI', label: 'Michigan' },
+    { value: 'MN', label: 'Minnesota' },
+    { value: 'MS', label: 'Mississippi' },
+    { value: 'MO', label: 'Missouri' },
+    { value: 'MT', label: 'Montana' },
+    { value: 'NE', label: 'Nebraska' },
+    { value: 'NV', label: 'Nevada' },
+    { value: 'NH', label: 'New Hampshire' },
+    { value: 'NJ', label: 'New Jersey' },
+    { value: 'NM', label: 'New Mexico' },
+    { value: 'NY', label: 'New York' },
+    { value: 'NC', label: 'North Carolina' },
+    { value: 'ND', label: 'North Dakota' },
+    { value: 'OH', label: 'Ohio' },
+    { value: 'OK', label: 'Oklahoma' },
+    { value: 'OR', label: 'Oregon' },
+    { value: 'PA', label: 'Pennsylvania' },
+    { value: 'RI', label: 'Rhode Island' },
+    { value: 'SC', label: 'South Carolina' },
+    { value: 'SD', label: 'South Dakota' },
+    { value: 'TN', label: 'Tennessee' },
+    { value: 'TX', label: 'Texas' },
+    { value: 'UT', label: 'Utah' },
+    { value: 'VT', label: 'Vermont' },
+    { value: 'VA', label: 'Virginia' },
+    { value: 'WA', label: 'Washington' },
+    { value: 'WV', label: 'West Virginia' },
+    { value: 'WI', label: 'Wisconsin' },
+    { value: 'WY', label: 'Wyoming' },
+];
+
+const provinces = [
+    { value: 'AB', label: 'Alberta' },
+    { value: 'BC', label: 'British Columbia' },
+    { value: 'MB', label: 'Manitoba' },
+    { value: 'NB', label: 'New Brunswick' },
+    { value: 'NL', label: 'Newfoundland and Labrador' },
+    { value: 'NS', label: 'Nova Scotia' },
+    { value: 'ON', label: 'Ontario' },
+    { value: 'PE', label: 'Prince Edward Island' },
+    { value: 'QC', label: 'Quebec' },
+    { value: 'SK', label: 'Saskatchewan' },
+    { value: 'NT', label: 'Northwest Territories' },
+    { value: 'NU', label: 'Nunavut' },
+    { value: 'YT', label: 'Yukon' },
+];
 
 const PrimaryUserUserDetail = ({ user, onBack, onLogout }) => {
     const [userData, setUserData] = useState(user);
     const [formData, setFormData] = useState({
-        firstName: user.firstName,
-        lastName: user.lastName,
-        userName: user.userName,
-        email: user.email,
-        role: user.role,
-        status: user.status,
+        firstName: '',
+        lastName: '',
+        userName: '',
+        email: '',
+        role: '',
+        status: '',
+        location: {
+            address: '',
+            city: '',
+            stateProvince: '',
+            country: '',
+            zipPostalCode: ''
+        },
+        userBio: '',
     });
+
+    const [editorState, setEditorState] = useState(EditorState.createEmpty());
     const [passwordFormData, setPasswordFormData] = useState({
         newPassword: '',
     });
@@ -27,10 +110,57 @@ const PrimaryUserUserDetail = ({ user, onBack, onLogout }) => {
         },
     }), [token]);
 
-    const handleChange = (e) => {
-        setFormData({ ...formData, [e.target.name]: e.target.value });
-    };
+    // Use useEffect to initialize formData when the user prop changes
+    useEffect(() => {
+        if (user) {
+            setFormData({
+                firstName: user.firstName || '',
+                lastName: user.lastName || '',
+                userName: user.userName || '',
+                email: user.email || '',
+                role: user.role || '',
+                status: user.status || '',
+                location: {
+                    address: user.location?.address || '',
+                    city: user.location?.city || '',
+                    stateProvince: user.location?.stateProvince || '',
+                    country: user.location?.country || '',
+                    zipPostalCode: user.location?.zipPostalCode || ''
+                },
+                userBio: user.userBio || ''
+            });
 
+            if (user.userBio) {
+                try {
+                    const contentState = convertFromRaw(JSON.parse(user.userBio));
+                    setEditorState(EditorState.createWithContent(contentState));
+                } catch (e) {
+                    console.error('Failed to parse user bio:', e);
+                    setEditorState(EditorState.createEmpty());
+                }
+            } else {
+                setEditorState(EditorState.createEmpty());
+            }
+        }
+    }, [user]);
+
+    // Handle both top-level and nested field changes
+    const handleChange = (e) => {
+        const { name, value } = e.target;
+        if (['address', 'city', 'stateProvince', 'country', 'zipPostalCode'].includes(name)) {
+            setFormData(prev => ({
+                ...prev,
+                location: {
+                    ...prev.location,
+                    [name]: value
+                }
+            }));
+        } else {
+            setFormData(prev => ({ ...prev, [name]: value }));
+        }
+    };
+    
+    // ... (rest of password and status change handlers remain the same)
     const handlePasswordChange = (e) => {
         setPasswordFormData({ ...passwordFormData, [e.target.name]: e.target.value });
     };
@@ -39,19 +169,44 @@ const PrimaryUserUserDetail = ({ user, onBack, onLogout }) => {
         e.preventDefault();
         setMessage('');
         setError('');
+
+        const contentState = editorState.getCurrentContent();
+        const rawContent = JSON.stringify(convertToRaw(contentState));
+
+        const updatedFormData = { ...formData, userBio: rawContent };
+
+        // Create a temporary location object, including only populated fields
+        const locationToSend = {};
+        if (updatedFormData.location.address) {
+            locationToSend.address = updatedFormData.location.address;
+        }
+        if (updatedFormData.location.city) {
+            locationToSend.city = updatedFormData.location.city;
+        }
+        if (updatedFormData.location.stateProvince) {
+            locationToSend.stateProvince = updatedFormData.location.stateProvince;
+        }
+        if (updatedFormData.location.country) {
+            locationToSend.country = updatedFormData.location.country;
+        }
+        if (updatedFormData.location.zipPostalCode) {
+            locationToSend.zipPostalCode = updatedFormData.location.zipPostalCode;
+        }
+
+        // Conditionally include the location object in the request body
+        if (Object.keys(locationToSend).length > 0) {
+            updatedFormData.location = locationToSend;
+        } else {
+            // If location is completely empty, remove the key from the request body
+            delete updatedFormData.location;
+        }
+
         try {
-            const body = {
-                firstName: formData.firstName,
-                lastName: formData.lastName,
-                userName: formData.userName,
-                email: formData.email,
-                role: formData.role,
-            };
-            const response = await axios.put(`http://localhost:5001/api/account/users/${userData._id}`, body, config);
+            const response = await axios.put(`http://localhost:5001/api/account/users/${userData._id}`, updatedFormData, config);
             setUserData(response.data);
             setMessage('User updated successfully!');
         } catch (err) {
-            setError(err.response?.data?.msg || 'An error occurred while updating the user.');
+            setError(err.response?.data?.msg || 'An error occurred while updating the user. ❌');
             if (err.response?.status === 401 || err.response?.status === 403) {
                 onLogout();
             }
@@ -66,7 +221,6 @@ const PrimaryUserUserDetail = ({ user, onBack, onLogout }) => {
             const body = {
                 status: formData.status,
             };
-            // Call the dedicated status update endpoint
             const response = await axios.put(`http://localhost:5001/api/account/users/${userData._id}/status`, body, config);
             setUserData(prevData => ({ ...prevData, status: formData.status }));
             setMessage(response.data.msg);
@@ -112,6 +266,10 @@ const PrimaryUserUserDetail = ({ user, onBack, onLogout }) => {
         }
     };
 
+    // Conditional rendering logic for state/province dropdown
+    const stateProvinceOptions = formData.location.country === 'USA' ? states :
+                                formData.location.country === 'Canada' ? provinces : [];
+
     return (
         <div className="content">
             <header className="header">
@@ -138,6 +296,58 @@ const PrimaryUserUserDetail = ({ user, onBack, onLogout }) => {
                     <label htmlFor="email">Email Address</label>
                     <input type="email" id="email" name="email" value={formData.email} onChange={handleChange} />
                 </div>
+                
+                <hr/>
+                
+                <h4>User Bio</h4>
+                <div className="form-group">
+                    <Editor
+                        editorState={editorState}
+                        onEditorStateChange={setEditorState}
+                        wrapperClassName="bio-editor-wrapper"
+                        editorClassName="bio-editor"
+                        toolbarClassName="bio-editor-toolbar"
+                    />
+                </div>
+                
+                <hr/>
+
+                <h4>Location</h4>
+                <div className="form-group">
+                    <label htmlFor="country">Country</label>
+                    <select id="country" name="country" value={formData.location.country} onChange={handleChange}>
+                        <option value="">Select a Country</option>
+                        <option value="Canada">Canada</option>
+                        <option value="USA">USA</option>
+                    </select>
+                </div>
+                
+                {formData.location.country && (
+                    <>
+                        <div className="form-group">
+                            <label htmlFor="stateProvince">State/Province</label>
+                            <select id="stateProvince" name="stateProvince" value={formData.location.stateProvince} onChange={handleChange}>
+                                <option value="">Select a State/Province</option>
+                                {stateProvinceOptions.map(option => (
+                                    <option key={option.value} value={option.value}>{option.label}</option>
+                                ))}
+                            </select>
+                        </div>
+                        <div className="form-group">
+                            <label htmlFor="address">Address</label>
+                            <input type="text" id="address" name="address" value={formData.location.address} onChange={handleChange} />
+                        </div>
+                        <div className="form-group">
+                            <label htmlFor="city">City</label>
+                            <input type="text" id="city" name="city" value={formData.location.city} onChange={handleChange} />
+                        </div>
+                        <div className="form-group">
+                            <label htmlFor="zipPostalCode">Zip/Postal Code</label>
+                            <input type="text" id="zipPostalCode" name="zipPostalCode" value={formData.location.zipPostalCode} onChange={handleChange} />
+                        </div>
+                    </>
+                )}
+                
                 <button type="submit" className="submit-btn">Update User</button>
             </form>
 

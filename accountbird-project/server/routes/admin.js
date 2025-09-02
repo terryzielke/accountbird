@@ -342,55 +342,89 @@ router.get('/users/:userId', auth(['admin']), async (req, res) => {
 
 /**
  * @route   PUT /api/admin/users/:userId
- * @desc    Update a user's details (name, email, role)
+ * @desc    Admin updates a user's details, including bio and location
  * @access  Private (Admin only)
  */
 router.put('/users/:userId', auth(['admin']), async (req, res) => {
-    const { firstName, lastName, userName, email, role } = req.body;
-    const userFields = {};
-    if (firstName) userFields.firstName = firstName;
-    if (lastName) userFields.lastName = lastName;
-    if (userName) userFields.userName = userName;
-    if (email) userFields.email = email;
-    if (role) userFields.role = role;
+    // Destructure all fields from the request body, including the new userBio.
+    const { firstName, lastName, userName, email, role, status, location, userBio } = req.body;
+    const userId = req.params.userId;
     
-    // Validate userName format using a regular expression
-    const userNameRegex = /^[a-zA-Z0-9_-]+$/;
-    if (!userNameRegex.test(userName)) {
-        return res.status(400).json({ msg: 'Username can only contain letters, numbers, dashes, and underscores.' });
+    // 1. Provide a more descriptive error for an empty userName field.
+    if (userName === '') {
+        return res.status(400).json({ msg: 'Username cannot be empty.' });
+    }
+    
+    // Validate userName format if it's being updated
+    if (userName) {
+        const userNameRegex = /^[a-zA-Z0-9_-]+$/;
+        if (!userNameRegex.test(userName)) {
+            return res.status(400).json({ msg: 'Username can only contain letters, numbers, dashes, and underscores.' });
+        }
     }
 
     try {
-        let user = await User.findById(req.params.userId);
+        // Find the user to be updated. An Admin can update any User or Admin.
+        const userToUpdate = await User.findById(userId) || await Admin.findById(userId);
 
-        if (!user) {
+        if (!userToUpdate) {
             return res.status(404).json({ msg: 'User not found' });
         }
 
-        // Check if the userName is already in use
-        if (userName && userName !== user.userName) {
+        // Prevent an Admin from changing their own role to something other than 'admin'
+        if (String(userToUpdate.id) === String(req.user.id) && role && role !== 'admin') {
+            return res.status(403).json({ msg: 'Admins cannot change their own role to a non-admin role.' });
+        }
+        
+        // Prevent an Admin from deactivating their own account
+        if (String(userToUpdate.id) === String(req.user.id) && status && status === 'Deactivated') {
+            return res.status(403).json({ msg: 'Admins cannot deactivate their own account.' });
+        }
+
+        // Check for uniqueness of email and userName
+        if (userName && userName !== userToUpdate.userName) {
             const existingUser = await User.findOne({ userName });
             if (existingUser) {
                 return res.status(400).json({ msg: 'Username already in use.' });
             }
         }
 
-        // Check if a user with the new email already exists
-        if (email && email !== user.email) {
+        if (email && email !== userToUpdate.email) {
             const existingUser = await User.findOne({ email });
             if (existingUser) {
                 return res.status(400).json({ msg: 'Email already in use.' });
             }
         }
+        
+        // Apply updates directly to the user object
+        if (firstName) userToUpdate.firstName = firstName;
+        if (lastName) userToUpdate.lastName = lastName;
+        if (userName) userToUpdate.userName = userName;
+        if (email) userToUpdate.email = email;
+        if (role) userToUpdate.role = role;
+        if (status) userToUpdate.status = status;
 
-        // Update the user
-        user = await User.findByIdAndUpdate(
-            req.params.userId,
-            { $set: userFields },
-            { new: true }
-        ).select('-password');
+        // Conditionally apply user-specific fields only if the user is a regular user.
+        if (userToUpdate.role !== 'admin') {
+            if (typeof userBio === 'string') {
+                userToUpdate.userBio = userBio;
+            }
+    
+            // 2. Allow location data to be empty.
+            if (location && typeof location === 'object' && Object.keys(location).length > 0) {
+                userToUpdate.location = {
+                    ...userToUpdate.location,
+                    ...location
+                };
+            }
+        }
+        
+        await userToUpdate.save();
 
-        res.json(user);
+        // Retrieve the updated user, excluding the password
+        const updatedUser = await userToUpdate.constructor.findById(userId).select('-password');
+        res.json(updatedUser);
+
     } catch (err) {
         console.error(err.message);
         res.status(500).send('Server Error');

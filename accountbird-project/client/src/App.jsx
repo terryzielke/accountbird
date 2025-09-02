@@ -18,29 +18,42 @@ function App() {
     const [loading, setLoading] = useState(true);
     const [user, setUser] = useState(null);
 
+    // This useEffect hook is responsible for checking initialization status
+    // and fetching full user data if a token exists.
     useEffect(() => {
-        const checkInitializationStatus = async () => {
-            try {
-                const response = await axios.get('http://localhost:5001/api/init/check');
-                setIsInitialized(response.data.initialized);
-            } catch (error) {
-                console.error('Error checking initialization status:', error);
-                setIsInitialized(false);
-            } finally {
-                setLoading(false);
+        const checkInitializationAndFetchUser = async () => {
+            const token = localStorage.getItem('token');
+
+            if (token) {
+                try {
+                    // Fetch the full user profile from the back-end
+                    const res = await axios.get('http://localhost:5001/api/profile', {
+                        headers: { 'x-auth-token': token },
+                    });
+                    
+                    setUser(res.data);
+                    setIsInitialized(true);
+                    localStorage.setItem('user', JSON.stringify(res.data)); // Update localStorage with the full user object
+                } catch (error) {
+                    console.error('Error fetching user profile:', error);
+                    handleLogout(); // Clear invalid token and log out
+                } finally {
+                    setLoading(false);
+                }
+            } else {
+                try {
+                    const response = await axios.get('http://localhost:5001/api/init/check');
+                    setIsInitialized(response.data.initialized);
+                } catch (error) {
+                    console.error('Error checking initialization status:', error);
+                    setIsInitialized(false);
+                } finally {
+                    setLoading(false);
+                }
             }
         };
 
-        const token = localStorage.getItem('token');
-        const storedUser = localStorage.getItem('user');
-
-        if (token && storedUser) {
-            setUser(JSON.parse(storedUser));
-            setIsInitialized(true);
-            setLoading(false);
-        } else {
-            checkInitializationStatus();
-        }
+        checkInitializationAndFetchUser();
     }, []);
 
     const handleLogout = () => {
@@ -49,8 +62,18 @@ function App() {
         setUser(null);
     };
 
-    const handleLoginSuccess = (userData) => {
-        setUser(userData);
+    const handleLoginSuccess = async (userData) => {
+        // After successful login, immediately fetch the full user profile
+        try {
+            const res = await axios.get('http://localhost:5001/api/profile', {
+                headers: { 'x-auth-token': localStorage.getItem('token') },
+            });
+            setUser(res.data);
+            localStorage.setItem('user', JSON.stringify(res.data)); // Update localStorage
+        } catch (error) {
+            console.error('Error fetching user data after login:', error);
+            handleLogout();
+        }
     };
 
     const handleUserUpdate = (updatedUserData) => {
