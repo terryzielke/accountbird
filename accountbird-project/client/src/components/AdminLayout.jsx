@@ -1,6 +1,6 @@
 // client/src/components/AdminLayout.jsx
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 
 import Toolbar from './Toolbar';
 import Sidebar from './Sidebar';
@@ -16,7 +16,6 @@ import BillingAndPayments from './AdminBillingAndPayments';
 
 const AdminLayout = ({ user, onLogout }) => {
     return (
-        <Router>
             <div className="layout-container">
                 <Toolbar user={user} onLogout={onLogout} />
                 <div className="main-content-container">
@@ -37,7 +36,6 @@ const AdminLayout = ({ user, onLogout }) => {
                     </div>
                 </div>
             </div>
-        </Router>
     );
 };
 

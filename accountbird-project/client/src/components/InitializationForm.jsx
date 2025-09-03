@@ -40,32 +40,34 @@ const InitializationForm = ({ onInitializationSuccess }) => {
     };
 
     return (
-        <div className="form-container">
-            <h2>System Initialization</h2>
-            <p>Please provide the site and initial admin details to set up your system.</p>
-            
-            {message && <div className="success-message">{message}</div>}
-            {error && <div className="error-message">{error}</div>}
+        <div className="initialization-container">
+            <div className="initialization">
+                <h2>System Initialization</h2>
+                <p>Please provide the site and initial admin details to set up your system.</p>
+                
+                {message && <div className="success-message">{message}</div>}
+                {error && <div className="error-message">{error}</div>}
 
-            <form onSubmit={handleSubmit}>
-                <div className="form-group">
-                    <label htmlFor="siteName">Site Name</label>
-                    <input type="text" id="siteName" name="siteName" value={formData.siteName} onChange={handleChange} required />
-                </div>
-                <div className="form-group">
-                    <label htmlFor="adminUserName">Admin User Name</label>
-                    <input type="text" id="adminUserName" name="adminUserName" value={formData.adminUserName} onChange={handleChange} required />
-                </div>
-                <div className="form-group">
-                    <label htmlFor="adminEmail">Admin Email</label>
-                    <input type="email" id="adminEmail" name="adminEmail" value={formData.adminEmail} onChange={handleChange} required />
-                </div>
-                <div className="form-group">
-                    <label htmlFor="adminPassword">Admin Password</label>
-                    <input type="password" id="adminPassword" name="adminPassword" value={formData.adminPassword} onChange={handleChange} required />
-                </div>
-                <button type="submit" className="submit-btn">Initialize System</button>
-            </form>
+                <form onSubmit={handleSubmit}>
+                    <div className="form-group">
+                        <label htmlFor="siteName">Site Name</label>
+                        <input type="text" id="siteName" name="siteName" value={formData.siteName} onChange={handleChange} required />
+                    </div>
+                    <div className="form-group">
+                        <label htmlFor="adminUserName">Admin User Name</label>
+                        <input type="text" id="adminUserName" name="adminUserName" value={formData.adminUserName} onChange={handleChange} required />
+                    </div>
+                    <div className="form-group">
+                        <label htmlFor="adminEmail">Admin Email</label>
+                        <input type="email" id="adminEmail" name="adminEmail" value={formData.adminEmail} onChange={handleChange} required />
+                    </div>
+                    <div className="form-group">
+                        <label htmlFor="adminPassword">Admin Password</label>
+                        <input type="password" id="adminPassword" name="adminPassword" value={formData.adminPassword} onChange={handleChange} required />
+                    </div>
+                    <button type="submit" className="submit-btn">Initialize System</button>
+                </form>
+            </div>
         </div>
     );
 };

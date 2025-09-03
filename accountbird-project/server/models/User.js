@@ -73,7 +73,19 @@ const UserSchema = new mongoose.Schema({
         type: String,
         trim: true,
         default: ''
-    }
+    },
+    twoFactorSecret: {
+        type: String,
+        default: null
+    },
+    twoFactorExpiration: {
+        type: Date,
+        default: null
+    },
+    trustedDevices: [{
+        deviceId: String,
+        expires: Date
+    }]
 });
 
 module.exports = mongoose.model('User', UserSchema);

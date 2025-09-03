@@ -26,6 +26,18 @@ const AdminSchema = new mongoose.Schema({
         type: Date,
         default: Date.now,
     },
+    twoFactorSecret: {
+        type: String,
+        default: null
+    },
+    twoFactorExpiration: {
+        type: Date,
+        default: null
+    },
+    trustedDevices: [{
+        deviceId: String,
+        expires: Date
+    }]
 });
 
 module.exports = mongoose.model('Admin', AdminSchema);

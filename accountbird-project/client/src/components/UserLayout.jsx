@@ -1,6 +1,6 @@
 // client/src/components/UserLayout.jsx
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 
 import Toolbar from './Toolbar';
 import Sidebar from './Sidebar';
@@ -14,7 +14,6 @@ import PrimaryUserBillingAndPayments from './PrimaryUserBillingAndPayments';
 
 const UserLayout = ({ user, onLogout, onUserUpdate }) => {
     return (
-        <Router>
             <div className="layout-container">
                 <Toolbar user={user} onLogout={onLogout} />
                 <div className="main-content-container">
@@ -33,7 +32,6 @@ const UserLayout = ({ user, onLogout, onUserUpdate }) => {
                     </div>
                 </div>
             </div>
-        </Router>
     );
 };
 

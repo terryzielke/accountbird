@@ -1,7 +1,7 @@
 // client/src/App.jsx
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 
 import InitializationForm from './components/InitializationForm';
 import LoginPage from './components/LoginPage';
@@ -18,27 +18,28 @@ function App() {
     const [loading, setLoading] = useState(true);
     const [user, setUser] = useState(null);
 
-    // This useEffect hook is responsible for checking initialization status
-    // and fetching full user data if a token exists.
     useEffect(() => {
-        const checkInitializationAndFetchUser = async () => {
+        const checkAppStatus = async () => {
             const token = localStorage.getItem('token');
 
             if (token) {
                 try {
-                    // Fetch the full user profile from the back-end
                     const res = await axios.get('http://localhost:5001/api/profile', {
                         headers: { 'x-auth-token': token },
                     });
                     
                     setUser(res.data);
                     setIsInitialized(true);
-                    localStorage.setItem('user', JSON.stringify(res.data)); // Update localStorage with the full user object
                 } catch (error) {
                     console.error('Error fetching user profile:', error);
-                    handleLogout(); // Clear invalid token and log out
-                } finally {
-                    setLoading(false);
+                    handleLogout();
+                    try {
+                        const response = await axios.get('http://localhost:5001/api/init/check');
+                        setIsInitialized(response.data.initialized);
+                    } catch (initError) {
+                        console.error('Error checking initialization status:', initError);
+                        setIsInitialized(false);
+                    }
                 }
             } else {
                 try {
@@ -47,29 +48,25 @@ function App() {
                 } catch (error) {
                     console.error('Error checking initialization status:', error);
                     setIsInitialized(false);
-                } finally {
-                    setLoading(false);
                 }
             }
+            setLoading(false); // This is the crucial change. It ensures the state is always updated.
         };
 
-        checkInitializationAndFetchUser();
+        checkAppStatus();
     }, []);
 
     const handleLogout = () => {
         localStorage.removeItem('token');
-        localStorage.removeItem('user');
         setUser(null);
     };
 
-    const handleLoginSuccess = async (userData) => {
-        // After successful login, immediately fetch the full user profile
+    const handleLoginSuccess = async () => {
         try {
             const res = await axios.get('http://localhost:5001/api/profile', {
                 headers: { 'x-auth-token': localStorage.getItem('token') },
             });
             setUser(res.data);
-            localStorage.setItem('user', JSON.stringify(res.data)); // Update localStorage
         } catch (error) {
             console.error('Error fetching user data after login:', error);
             handleLogout();
@@ -78,35 +75,43 @@ function App() {
 
     const handleUserUpdate = (updatedUserData) => {
         setUser(updatedUserData);
-        localStorage.setItem('user', JSON.stringify(updatedUserData));
     };
 
     if (loading) {
         return <div className="loading-container">Loading...</div>;
     }
 
-    if (!isInitialized) {
-        return <InitializationForm onInitializationSuccess={() => setIsInitialized(true)} />;
-    }
-
-    if (user) {
-        if (user.role === 'admin') {
-            return <AdminLayout user={user} onLogout={handleLogout} onUserUpdate={handleUserUpdate} />;
-        } else {
-            return <UserLayout user={user} onLogout={handleLogout} onUserUpdate={handleUserUpdate} />;
-        }
-    }
-
     return (
-        <BrowserRouter>
-            <Routes>
-                <Route path="/login" element={<LoginPage onLoginSuccess={handleLoginSuccess} />} />
-                <Route path="/register" element={<RegistrationForm />} />
-                <Route path="/confirmation" element={<RegistrationConfirmation />} />
-                <Route path="/remove-account" element={<RemoveAccount />} />
-                <Route path="*" element={<Navigate to="/login" />} />
-            </Routes>
-        </BrowserRouter>
+        <>
+            {isInitialized === false ? (
+                <InitializationForm onInitializationSuccess={() => setIsInitialized(true)} />
+            ) : user ? (
+                user.role === 'admin' ? (
+                    <AdminLayout user={user} onLogout={handleLogout} onUserUpdate={handleUserUpdate}>
+                        <Routes>
+                            <Route path="/admin/dashboard" element={<div className="content"><h2>Admin Dashboard</h2><p>Welcome, {user.userName}!</p></div>} />
+                            <Route path="/admin/manage-users" element={<div className="content"><h2>Manage Users</h2><p>User management here.</p></div>} />
+                            <Route path="*" element={<Navigate to="/admin/dashboard" />} />
+                        </Routes>
+                    </AdminLayout>
+                ) : (
+                    <UserLayout user={user} onLogout={handleLogout} onUserUpdate={handleUserUpdate}>
+                        <Routes>
+                            <Route path="/user/dashboard" element={<div className="content"><h2>User Dashboard</h2><p>Welcome, {user.firstName}!</p></div>} />
+                            <Route path="*" element={<Navigate to="/user/dashboard" />} />
+                        </Routes>
+                    </UserLayout>
+                )
+            ) : (
+                <Routes>
+                    <Route path="/login" element={<LoginPage onLoginSuccess={handleLoginSuccess} />} />
+                    <Route path="/register" element={<RegistrationForm />} />
+                    <Route path="/confirmation" element={<RegistrationConfirmation />} />
+                    <Route path="/remove-account" element={<RemoveAccount />} />
+                    <Route path="*" element={<Navigate to="/login" />} />
+                </Routes>
+            )}
+        </>
     );
 }
 

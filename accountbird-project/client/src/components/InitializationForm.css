@@ -1,1 +1,36 @@
 /* client/src/components/InitializationForm.css */
+.initialization-container {
+    text-align: center;
+    height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.initialization-container .initialization {
+    width: 80%;
+    max-width: 500px;
+    margin: auto;
+    text-align: left;
+}
+
+.initialization-container .initialization h2{
+    margin-bottom: 10px;
+}
+
+.initialization-container .initialization form {
+    margin: 0 0 20px;
+    padding: 20px 20px 30px;
+    background: #F0F0F0;
+    border-radius: 0;
+} 
+
+.initialization-container .initialization form input,
+.initialization-container .initialization form select {
+    background-color: white;
+}
+
+.initialization-container .initialization form .submit-btn{
+    margin-bottom: 0;
+}

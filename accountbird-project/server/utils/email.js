@@ -41,4 +41,29 @@ const sendEmail = async (to, subject, htmlContent) => {
     }
 };
 
-module.exports = sendEmail;
+/**
+ * Sends a two-factor authentication code to the user's email.
+ * @param {string} to - Recipient's email address.
+ * @param {string} code - The 2FA code to be sent.
+ */
+const sendTwoFactorCode = async (to, code) => {
+    const subject = 'Your Two-Step Verification Code';
+    const htmlContent = `
+        <div style="font-family: Arial, sans-serif; line-height: 1.6;">
+            <h2>Two-Step Verification</h2>
+            <p>Hello,</p>
+            <p>To complete your login, please use the following verification code:</p>
+            <h1 style="background: #f4f4f4; padding: 10px; text-align: center; border-radius: 5px;">${code}</h1>
+            <p>This code will expire in 5 minutes. If you did not attempt to log in, you can safely ignore this email.</p>
+            <p>Thank you,<br>The AccountBird Team</p>
+        </div>
+    `;
+
+    // Reuse the existing sendEmail function
+    await sendEmail(to, subject, htmlContent);
+};
+
+module.exports = {
+    sendEmail,
+    sendTwoFactorCode
+};

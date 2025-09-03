@@ -6,6 +6,7 @@ h3{
     border: none;
 }
 .wysiwyg-editor{
+    background: #F0F0F0;
     border: 1px solid #EEE;
     min-height: 400px;
     padding: 10px;
