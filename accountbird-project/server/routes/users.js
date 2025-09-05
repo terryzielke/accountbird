@@ -4,7 +4,7 @@ const router = express.Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const auth = require('../middleware/auth');
-const sendEmail = require('../utils/email');
+const {sendEmail} = require('../utils/email');
 
 // Import our new models
 const User = require('../models/User');

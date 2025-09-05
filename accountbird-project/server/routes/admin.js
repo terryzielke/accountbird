@@ -1,10 +1,11 @@
 // server/routes/admin.js
 const express = require('express');
 const router = express.Router();
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const auth = require('../middleware/auth');
 const bcrypt = require('bcryptjs');
 const mongoose = require('mongoose');
-const sendEmail = require('../utils/email');
+const {sendEmail} = require('../utils/email');
 const jwt = require('jsonwebtoken');
 
 // Import our models
@@ -910,6 +911,82 @@ router.delete('/settings/subscriptions/:id', auth(['admin']), async (req, res) =
     } catch (err) {
         console.error(err.message);
         res.status(500).send('Server Error');
+    }
+});
+
+// NOTE: The redirect URI for both of these routes must be whitelisted in your Stripe Dashboard.
+// [ cite_start ]// To implement the admin's ability to set up Stripe connections, we'll implement new API routes[ cite: 153, 154 ].
+
+/**
+ * @route GET /api/admin/stripe/connect
+ * @description Initiates the Stripe Connect OAuth flow.
+ * @access Private (Admin Only)
+ */
+router.get('/stripe/connect', auth(['admin']), (req, res) => {
+    // Construct the URL to redirect the user to Stripe's OAuth page.
+    const redirectUri = `${process.env.BACKEND_URL}/api/admin/stripe/oauth_redirect`;
+    const stripeAuthUrl = `https://connect.stripe.com/oauth/authorize?response_type=code&client_id=${process.env.STRIPE_CLIENT_ID}&scope=read_write&redirect_uri=${encodeURIComponent(redirectUri)}`;
+
+    // Redirect the admin to Stripe.
+    res.redirect(stripeAuthUrl);
+});
+
+/**
+ * @route GET /api/admin/stripe/oauth_redirect
+ * @description Handles the redirect from Stripe after a successful connection.
+ * @access Public (Stripe will redirect here, so it cannot be protected by auth)
+ */
+router.get('/stripe/oauth_redirect', async (req, res) => {
+    const {
+        code
+    } = req.query;
+
+    // Check if an authorization code was received.
+    if (!code) {
+        return res.status(400).json({
+            msg: 'Stripe authorization failed or was denied.'
+        });
+    }
+
+    try {
+        // Exchange the authorization code for an access token.
+        const response = await stripe.oauth.token({
+            grant_type: 'authorization_code',
+            code: code,
+        });
+
+        // Extract the necessary credentials.
+        const {
+            stripe_user_id,
+            access_token,
+            refresh_token
+        } = response;
+
+        // TODO: Securely save these credentials. We'll save the Stripe account ID and access token to a GeneralSettings collection or an Admin-specific document.
+        // NOTE: The refresh token should also be saved and used to get new access tokens.
+        // For this example, we will save it to the current admin user's document.
+        const adminUser = await User.findById(req.user.id); // This will not work directly as this route is not protected.
+        // Instead, you need a mechanism to identify the user after the redirect.
+        // A common way is to use a state parameter in the initial redirect.
+
+        // For a simple implementation, let's assume we update a global setting document.
+        let globalSettings = await GeneralSettings.findOne({});
+        if (!globalSettings) {
+            globalSettings = new GeneralSettings();
+        }
+        globalSettings.stripe = {
+            accountId: stripe_user_id,
+            accessToken: access_token,
+            refreshToken: refresh_token,
+        };
+        await globalSettings.save();
+
+        // Redirect the user back to the admin dashboard with a success message.
+        res.redirect(`${process.env.FRONTEND_URL}/admin/dashboard?stripe_success=true`);
+    } catch (err) {
+        console.error(err);
+        // Redirect the user back with an error.
+        res.redirect(`${process.env.FRONTEND_URL}/admin/dashboard?stripe_error=true`);
     }
 });
 

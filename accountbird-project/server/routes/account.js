@@ -3,7 +3,7 @@ const express = require('express');
 const router = express.Router();
 const auth = require('../middleware/auth');
 const bcrypt = require('bcryptjs');
-const sendEmail = require('../utils/email');
+const {sendEmail} = require('../utils/email');
 const jwt = require('jsonwebtoken');
 
 // Import models

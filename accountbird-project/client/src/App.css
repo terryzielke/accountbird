@@ -187,7 +187,19 @@ form{
     background-position: right 10px center;
     background-size: 16px;
 }
-
+.btn {
+    display: block;
+    padding: 10px 20px;
+    margin-bottom: 40px;
+    background: #FFD644;
+    color: #fff;
+    border: none;
+    border-radius: 0;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background 0.3s ease;
+}
 .submit-btn {
     display: block;
     width: 100%;
