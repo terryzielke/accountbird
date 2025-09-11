@@ -67,13 +67,13 @@ const sendTwoFactorCode = async (to, code) => {
             <div style="margin: auto; width: 80%; max-width: 600px; font-family: Arial, sans-serif; color: #333; text-align: left;">
                 <h3 style="margin: 0 10px;">${siteName}</h3>
                 <div style="margin-top: 20px; padding: 10px; border: 1px solid #eee; border-radius: 5px; background-color: #fff;">
-                    <h2>Two-Step Verification</h2>
-                    <p>Hello,</p>
-                    <p>To complete your login, please use the following verification code:</p>
+                    <h2 style="color: #333;">Two-Step Verification</h2>
+                    <p style="color: #333;">Hello,</p>
+                    <p style="color: #333;">To complete your login, please use the following verification code:</p>
                     <h1 style="background: #f0f0f0; padding: 10px; text-align: center; border-radius: 5px;">${code}</h1>
-                    <p>This code will expire in 5 minutes. If you did not attempt to log in, you can safely ignore this email.</p>
-                    <p>Thank you,</p>
-                    <p>The ${siteName} Team</p>
+                    <p style="color: #333;">This code will expire in 5 minutes. If you did not attempt to log in, you can safely ignore this email.</p>
+                    <p style="color: #333;">Thank you,</p>
+                    <p style="color: #333;">The ${siteName} Team</p>
                 </div>
             </div>
         </div>

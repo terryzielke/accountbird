@@ -1,7 +1,8 @@
 // client/src/components/LoginPage.jsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import AuthContext from '../context/AuthContext';
 import LoginPageTwo from './LoginPageTwo';
 import './LoginPage.css';
 
@@ -21,7 +22,8 @@ const setCookie = (name, value, days) => {
     document.cookie = `${name}=${value}; expires=${expires}; path=/`;
 };
 
-const LoginPage = ({ onLoginSuccess }) => {
+// Remove the onLoginSuccess prop, as we will use the context function instead
+const LoginPage = () => {
     const [formData, setFormData] = useState({
         email: '',
         password: '',
@@ -31,6 +33,9 @@ const LoginPage = ({ onLoginSuccess }) => {
     const [twoFactorRequired, setTwoFactorRequired] = useState(false);
     const [emailForTwoStep, setEmailForTwoStep] = useState('');
     const navigate = useNavigate();
+
+    // Use useContext to get the login function from AuthContext
+    const { login, isAuth, user } = useContext(AuthContext);
 
     const { email, password } = formData;
 
@@ -44,6 +49,18 @@ const LoginPage = ({ onLoginSuccess }) => {
         }
         setDeviceId(currentDeviceId);
     }, []);
+
+    // Add a useEffect hook to handle redirection after authentication status changes.
+    useEffect(() => {
+        if (isAuth) {
+            // Redirect based on user role or to a default page
+            if (user && user.role === 'admin') {
+                navigate('/admin/dashboard');
+            } else {
+                navigate('/');
+            }
+        }
+    }, [isAuth, user, navigate]);
 
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -73,22 +90,20 @@ const LoginPage = ({ onLoginSuccess }) => {
                 setEmailForTwoStep(email);
                 setMessage(response.data.msg);
             } else {
-                localStorage.setItem('token', response.data.token);
-                onLoginSuccess(response.data.user);
-                navigate('/');
+                // Call the login function from AuthContext instead of the prop
+                login(response.data.token, response.data.user);
+                // The useEffect hook will now handle the navigation
             }
-
         } catch (err) {
             setError(err.response?.data?.msg || 'An unexpected error occurred.');
             console.error(err);
         }
     };
-    
-    // This is the new callback function that handles the success of the 2FA form
+
     const handleTwoStepSuccess = (token, user) => {
-        localStorage.setItem('token', token);
-        onLoginSuccess(user);
-        navigate('/');
+        // This callback now also uses the context's login function
+        login(token, user);
+        // The useEffect hook will handle the navigation
     };
 
     if (twoFactorRequired) {

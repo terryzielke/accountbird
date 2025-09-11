@@ -1,6 +1,7 @@
 // server/models/Settings.js
 const mongoose = require('mongoose');
 
+// Schema for subscription types
 const SubscriptionTypeSchema = new mongoose.Schema({
     name: {
         type: String,
@@ -9,6 +10,7 @@ const SubscriptionTypeSchema = new mongoose.Schema({
     },
 });
 
+// Schema for settings
 const SettingsSchema = new mongoose.Schema({
     siteName: {
         type: String,
@@ -23,7 +25,7 @@ const SettingsSchema = new mongoose.Schema({
         type: String,
         required: true,
     },
-    // New field to store an array of subscription types
+    // Field to store an array of subscription types
     subscriptionTypes: [SubscriptionTypeSchema],
 
     emailSettings: {
@@ -53,7 +55,22 @@ const SettingsSchema = new mongoose.Schema({
             type: String,
             default: '<h2>Account Removal</h2><p>Your email has been removed from an account.</p>'
         },
-    }
+    },
+    // Stripe field to store platform credentials
+    stripe: {
+        accountId: {
+            type: String,
+            required: false, // Not required until an account is connected
+        },
+        accessToken: {
+            type: String,
+            required: false,
+        },
+        refreshToken: {
+            type: String,
+            required: false,
+        },
+    },
 });
 
 module.exports = mongoose.model('Settings', SettingsSchema);

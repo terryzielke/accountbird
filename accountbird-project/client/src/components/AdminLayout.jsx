@@ -12,30 +12,30 @@ import AdminAccountDetail from './AdminAccountDetail';
 import AdminGeneralSettings from './AdminGeneralSettings';
 import SubscriptionTypes from './AdminSubscriptionTypes';
 import AdminEmailSettings from './AdminEmailSettings';
-import BillingAndPayments from './AdminBillingAndPayments';
+import AdminBillingAndPayments from './AdminBillingAndPayments';
 
 const AdminLayout = ({ user, onLogout }) => {
     return (
-            <div className="layout-container">
-                <Toolbar user={user} onLogout={onLogout} />
-                <div className="main-content-container">
-                    <Sidebar userRole={user.role} />
-                    <div className="content-area">
-                        <Routes>
-                            <Route path="/" element={<Navigate to="/admin/dashboard" />} />
-                            <Route path="/admin/dashboard" element={<AdminDashboard onLogout={onLogout} />} />
-                            <Route path="/admin/accounts" element={<AdminManageAccounts onLogout={onLogout} />} />
-                            <Route path="/admin/users" element={<AdminManageUsers onLogout={onLogout} />} />
-                            <Route path="/admin/accounts/:accountId" element={<AdminAccountDetail onLogout={onLogout} />} />
-                            <Route path="/admin/settings/general" element={<AdminGeneralSettings onLogout={onLogout} />} />
-                            <Route path="/admin/settings/subscription" element={<SubscriptionTypes onLogout={onLogout} />} />
-                            <Route path="/admin/settings/email" element={<AdminEmailSettings onLogout={onLogout} />} />
-                            <Route path="/admin/settings/billing" element={<BillingAndPayments onLogout={onLogout} />} />
-                            <Route path="*" element={<div>Page Not Found</div>} />
-                        </Routes>
-                    </div>
+        <div className="layout-container">
+            <Toolbar user={user} onLogout={onLogout} />
+            <div className="main-content-container">
+                <Sidebar userRole={user.role} />
+                <div className="content-area">
+                    <Routes>
+                        <Route path="/" element={<Navigate to="/admin/dashboard" />} />
+                        <Route path="/admin/dashboard" element={<AdminDashboard onLogout={onLogout} />} />
+                        <Route path="/admin/accounts" element={<AdminManageAccounts onLogout={onLogout} />} />
+                        <Route path="/admin/users" element={<AdminManageUsers onLogout={onLogout} />} />
+                        <Route path="/admin/accounts/:accountId" element={<AdminAccountDetail onLogout={onLogout} />} />
+                        <Route path="/admin/settings/general" element={<AdminGeneralSettings onLogout={onLogout} />} />
+                        <Route path="/admin/settings/subscription" element={<SubscriptionTypes onLogout={onLogout} />} />
+                        <Route path="/admin/settings/email" element={<AdminEmailSettings onLogout={onLogout} />} />
+                        <Route path="/admin/settings/billing" element={<AdminBillingAndPayments onLogout={onLogout} />} />
+                        <Route path="*" element={<div>Page Not Found</div>} />
+                    </Routes>
                 </div>
             </div>
+        </div>
     );
 };
 

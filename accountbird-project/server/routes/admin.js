@@ -919,7 +919,7 @@ router.delete('/settings/subscriptions/:id', auth(['admin']), async (req, res) =
 
 /**
  * @route GET /api/admin/stripe/connect
- * @description Initiates the Stripe Connect OAuth flow.
+ * @description Initiates the Stripe Connect OAuth flow and returns a URL.
  * @access Private (Admin Only)
  */
 router.get('/stripe/connect', auth(['admin']), (req, res) => {
@@ -927,66 +927,64 @@ router.get('/stripe/connect', auth(['admin']), (req, res) => {
     const redirectUri = `${process.env.BACKEND_URL}/api/admin/stripe/oauth_redirect`;
     const stripeAuthUrl = `https://connect.stripe.com/oauth/authorize?response_type=code&client_id=${process.env.STRIPE_CLIENT_ID}&scope=read_write&redirect_uri=${encodeURIComponent(redirectUri)}`;
 
-    // Redirect the admin to Stripe.
-    res.redirect(stripeAuthUrl);
+    // Return the URL as a JSON response instead of a direct redirect
+    res.json({ redirectUrl: stripeAuthUrl });
 });
 
 /**
  * @route GET /api/admin/stripe/oauth_redirect
  * @description Handles the redirect from Stripe after a successful connection.
- * @access Public (Stripe will redirect here, so it cannot be protected by auth)
+ * @access Public
  */
 router.get('/stripe/oauth_redirect', async (req, res) => {
-    const {
-        code
-    } = req.query;
+    const { code } = req.query;
 
-    // Check if an authorization code was received.
     if (!code) {
-        return res.status(400).json({
-            msg: 'Stripe authorization failed or was denied.'
-        });
+        return res.status(400).json({ msg: 'Stripe authorization failed or was denied.' });
     }
 
     try {
-        // Exchange the authorization code for an access token.
         const response = await stripe.oauth.token({
             grant_type: 'authorization_code',
             code: code,
         });
 
-        // Extract the necessary credentials.
-        const {
-            stripe_user_id,
-            access_token,
-            refresh_token
-        } = response;
+        const { stripe_user_id, access_token, refresh_token } = response;
 
-        // TODO: Securely save these credentials. We'll save the Stripe account ID and access token to a GeneralSettings collection or an Admin-specific document.
-        // NOTE: The refresh token should also be saved and used to get new access tokens.
-        // For this example, we will save it to the current admin user's document.
-        const adminUser = await User.findById(req.user.id); // This will not work directly as this route is not protected.
-        // Instead, you need a mechanism to identify the user after the redirect.
-        // A common way is to use a state parameter in the initial redirect.
-
-        // For a simple implementation, let's assume we update a global setting document.
-        let globalSettings = await GeneralSettings.findOne({});
-        if (!globalSettings) {
-            globalSettings = new GeneralSettings();
+        // Find and update the Settings document
+        let settings = await Settings.findOne({});
+        if (!settings) {
+            settings = new Settings();
         }
-        globalSettings.stripe = {
+        settings.stripe = {
             accountId: stripe_user_id,
             accessToken: access_token,
             refreshToken: refresh_token,
         };
-        await globalSettings.save();
+        await settings.save();
 
-        // Redirect the user back to the admin dashboard with a success message.
-        res.redirect(`${process.env.FRONTEND_URL}/admin/dashboard?stripe_success=true`);
+        res.redirect(`${process.env.FRONTEND_URL}/admin/settings/billing?stripe_success=true`);
     } catch (err) {
         console.error(err);
-        // Redirect the user back with an error.
-        res.redirect(`${process.env.FRONTEND_URL}/admin/dashboard?stripe_error=true`);
+        res.redirect(`${process.env.FRONTEND_URL}/admin/settings/billing?stripe_error=true`);
+    }
+});
+
+/**
+ * @route GET /api/admin/stripe/status
+ * @description Checks if a Stripe account is connected.
+ * @access Private (Admin Only)
+ */
+router.get('/stripe/status', auth(['admin']), async (req, res) => {
+    try {
+        const settings = await Settings.findOne({});
+        if (settings && settings.stripe && settings.stripe.accountId) {
+            return res.json({ connected: true });
+        }
+        res.json({ connected: false });
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server Error');
     }
 });
 
